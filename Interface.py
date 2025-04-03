@@ -16,7 +16,7 @@ from ui_form_setC import Ui_setC
 
 matplotlib.use('Qt5Agg')
 
-lims_mandelbrot_dict = {'2': (-2, 0.5, -1.25, 1.25), '3': (-1, 1, -1.25, 1.25),
+LIST_MANDELBROT_DICT = {'2': (-2, 0.5, -1.25, 1.25), '3': (-1, 1, -1.25, 1.25),
                         '4': (-1.35, 1, -1.25, 1.25), '5': (-1, 1, -1, 1),
                         '6': (-1.3, 1.2, -1.2, 1.2), '7': (-1.25, 1.25, -1.3, 1.3),
                         '8': (-1.25, 1.25, -1.3, 1.3)}
@@ -28,11 +28,16 @@ class MplCanvas(FigureCanvasQTAgg):
         super().__init__(self.fig)
 
 
-class DialogSetLim(QDialog):
-    def __init__(self, parent=None):
+class BaseDialog(QDialog):
+    def __init__(self, ui_class, parent=None):
         super().__init__(parent)
-        self.ui = Ui_SetLimits()
+        self.ui = ui_class()
         self.ui.setupUi(self)
+
+
+class DialogSetLim(BaseDialog):
+    def __init__(self, parent=None):
+        super().__init__(Ui_SetLimits, parent)
         self.setTabOrder(self.ui.lineEdit_X, self.ui.lineEdit_Y)
         self.setTabOrder(self.ui.lineEdit_Y, self.ui.lineEdit_XC)
         self.setTabOrder(self.ui.lineEdit_XC, self.ui.lineEdit_YC)
@@ -40,20 +45,16 @@ class DialogSetLim(QDialog):
         self.setTabOrder(self.ui.lineEdit_deltaX, self.ui.lineEdit_deltaY)
 
 
-class DialogSave(QDialog):
+class DialogSave(BaseDialog):
     def __init__(self, parent=None):
-        super().__init__(parent)
-        self.ui = Ui_Save()
-        self.ui.setupUi(self)
+        super().__init__(Ui_Save, parent)
         self.setTabOrder(self.ui.lineEdit_L, self.ui.lineEdit_H)
         self.setTabOrder(self.ui.lineEdit_H, self.ui.lineEdit_DPI)
 
 
-class DialogSetC(QDialog):
+class DialogSetC(BaseDialog):
     def __init__(self, parent=None):
-        super().__init__(parent)
-        self.ui = Ui_setC()
-        self.ui.setupUi(self)
+        super().__init__(Ui_setC, parent)
         self.setTabOrder(self.ui.lineEdit_ReC, self.ui.lineEdit_ImC)
         self.setTabOrder(self.ui.lineEdit_ImC, self.ui.lineEdit_rhoC)
         self.setTabOrder(self.ui.lineEdit_rhoC, self.ui.lineEdit_phiC)
@@ -103,7 +104,7 @@ class MJSet(MyWindowMandelbrotJulia):
         self.ax = self.sc.ax
         self.ax.imshow([[0]], origin="lower", cmap=self.colormap)  # Empty initial image
         self.ax.set(xlim=(self.xmin_0, self.xmax_0), ylim=(self.ymin_0, self.ymax_0))
-        self.ax.callbacks.connect("xlim_changed", self.ax_update)
+        # self.ax.callbacks.connect("xlim_changed", self.ax_update)
         self.ax.callbacks.connect("ylim_changed", self.ax_update)
         self.ax.set(xlim=(self.xmin_0, self.xmax_0), ylim=(self.ymin_0, self.ymax_0))
         im = self.sc.ax.images[0]
@@ -129,15 +130,13 @@ class MJSet(MyWindowMandelbrotJulia):
 
         self.ui.horizontalSlider_XC.setValue(int(ini_slider_xc_val))
         self.ui.horizontalSlider_YC.setValue(int(ini_slider_yc_val))
-        self.ui.horizontalSlider_XC.valueChanged.connect(self.set_xc)
-        self.ui.horizontalSlider_YC.valueChanged.connect(self.set_yc)
+        self.ui.horizontalSlider_XC.valueChanged.connect(lambda: self.set_xyc('x'))
+        self.ui.horizontalSlider_YC.valueChanged.connect(lambda: self.set_xyc('y'))
         self.ui.pushButton_ResetC.clicked.connect(self.reset_c)
 
         self.ui.pushButton_setC.clicked.connect(self.set_c_dial)
 
-        rho = math.sqrt(self.x_c ** 2 + self.y_c ** 2)
-        phi = math.atan2(self.y_c, self.x_c)
-        phi = phi + 2 * math.pi * (phi < 0)
+        rho, phi = self.polar_coordinates(self.x_c, self.y_c)
         self.ui.label_C.setText(
             f'C = {self.x_c:.4f} {self.y_c:+.4f}\U0001D456 = {rho:.4f}\U000022C5exp({phi:.4f}\U0001D456)')
 
@@ -171,8 +170,7 @@ class MJSet(MyWindowMandelbrotJulia):
         im.set(data=mandelbrot_julia_set(xmin, xmax, ymin, ymax, horizon=self.horizon,
                                          length=self.length, height=self.height, n=n,
                                          x_c=self.x_c, y_c=self.y_c, power=self.power, mode=self.mode)[2].T,
-               extent=(*self.ax.get_xlim(), *self.ax.get_ylim()), cmap=self.colormap)
-        self.ax.figure.canvas.draw()
+               extent=(xmin, xmax, ymin, ymax), cmap=self.colormap)
         # light = colors.LightSource(azdeg=315, altdeg=10)  # create a Light Source, coming from somewhere
         # data = mandelbrot_set(xmin, xmax, ymin, ymax, height=1000, length=1000, n=n, horizon=2e50)[2].T
         # data = light.shade(data, cmap=plt.get_cmap('hot'), vert_exag=1.5,
@@ -180,33 +178,34 @@ class MJSet(MyWindowMandelbrotJulia):
         # im.set(data=data, extent=(*ax.get_xlim(), *ax.get_ylim()))
         print('min, max =', im.get_array().min(), im.get_array().max(), '\n')
         im.set(clim=(im.get_array().min(), im.get_array().max()))
+        self.ax.figure.canvas.draw_idle()
         self.sc.fig.tight_layout()
 
     @property
     def xmin_0(self):
         if self.mode == 'mandelbrot':
-            return lims_mandelbrot_dict[str(self.power)][0]
+            return LIST_MANDELBROT_DICT[str(self.power)][0]
         elif self.mode == 'julia':
             return -2.0
 
     @property
     def xmax_0(self):
         if self.mode == 'mandelbrot':
-            return lims_mandelbrot_dict[str(self.power)][1]
+            return LIST_MANDELBROT_DICT[str(self.power)][1]
         elif self.mode == 'julia':
             return 2.0
 
     @property
     def ymin_0(self):
         if self.mode == 'mandelbrot':
-            return lims_mandelbrot_dict[str(self.power)][2]
+            return LIST_MANDELBROT_DICT[str(self.power)][2]
         elif self.mode == 'julia':
             return -1.3
 
     @property
     def ymax_0(self):
         if self.mode == 'mandelbrot':
-            return lims_mandelbrot_dict[str(self.power)][3]
+            return LIST_MANDELBROT_DICT[str(self.power)][3]
         elif self.mode == 'julia':
             return 1.3
 
@@ -237,35 +236,30 @@ class MJSet(MyWindowMandelbrotJulia):
         else:
             self.ui.horizontalSlider_N.setValue(self.n)
             self.slider_move = False
-        print('jopa')
 
     def change_n(self):
-        print('jdhgfjsgfjhdfgj')
         self.slider_move = True
         self.ax_update()
         self.ui.lineEdit_N.setText(f'{self.n}')
 
-    def set_xc(self):
+    def set_xyc(self, regime):
         delta_slider_c = 5e-4
-        i = self.ui.horizontalSlider_XC.value()
-        self.x_c = -1 + delta_slider_c * i
-        rho = math.sqrt(self.x_c ** 2 + self.y_c ** 2)
-        phi = math.atan2(self.y_c, self.x_c)
-        phi = phi + 2 * math.pi * (phi < 0)
+        if regime == 'x':
+            i = self.ui.horizontalSlider_XC.value()
+            self.x_c = -1 + delta_slider_c * i
+        elif regime == 'y':
+            i = self.ui.horizontalSlider_YC.value()
+            self.y_c = -1 + delta_slider_c * i
+        rho, phi = self.polar_coordinates(self.x_c, self.y_c)
         self.ui.label_C.setText(
             f'C = {self.x_c:.4f} {self.y_c:+.4f}\U0001D456 = {rho:.4f}\U000022C5exp({phi:.4f}\U0001D456)')
         self.ax_update()
 
-    def set_yc(self):
-        delta_slider_c = 5e-4
-        i = self.ui.horizontalSlider_YC.value()
-        self.y_c = -1 + delta_slider_c * i
-        rho = math.sqrt(self.x_c ** 2 + self.y_c ** 2)
-        phi = math.atan2(self.y_c, self.x_c)
+    def polar_coordinates(self, x_c, y_c):
+        rho = math.sqrt(x_c ** 2 + y_c ** 2)
+        phi = math.atan2(y_c, x_c)
         phi = phi + 2 * math.pi * (phi < 0)
-        self.ui.label_C.setText(
-            f'C = {self.x_c:.4f} {self.y_c:+.4f}\U0001D456 = {rho:.4f}\U000022C5exp({phi:.4f}\U0001D456)')
-        self.ax_update()
+        return rho, phi
 
     def reset_c(self):
         delta_slider_c = 5e-4
@@ -284,9 +278,7 @@ class MJSet(MyWindowMandelbrotJulia):
 
         self.set_c_dialog.ui.lineEdit_ReC.setText(f'{self.x_c:.4f}')
         self.set_c_dialog.ui.lineEdit_ImC.setText(f'{self.y_c:.4f}')
-        rho = math.sqrt(self.x_c ** 2 + self.y_c ** 2)
-        phi = math.atan2(self.y_c, self.x_c)
-        phi = phi + 2 * math.pi * (phi < 0)
+        rho, phi = self.polar_coordinates(self.x_c, self.y_c)
         self.set_c_dialog.ui.lineEdit_rhoC.setText(f'{rho:.4f}')
         self.set_c_dialog.ui.lineEdit_phiC.setText(f'{phi:.4f}')
 
@@ -296,9 +288,7 @@ class MJSet(MyWindowMandelbrotJulia):
         if regime == 'imre':
             self.x_c = float(self.set_c_dialog.ui.lineEdit_ReC.text())
             self.y_c = float(self.set_c_dialog.ui.lineEdit_ImC.text())
-            rho = math.sqrt(self.x_c ** 2 + self.y_c ** 2)
-            phi = math.atan2(self.y_c, self.x_c)
-            phi = phi + 2 * math.pi * (phi < 0)
+            rho, phi = self.polar_coordinates(self.x_c, self.y_c)
         elif regime == 'rhophi':
             rho = abs(float(self.set_c_dialog.ui.lineEdit_rhoC.text()))
             phi = float(self.set_c_dialog.ui.lineEdit_phiC.text()) % (2 * math.pi)
@@ -320,6 +310,7 @@ class MJSet(MyWindowMandelbrotJulia):
         self.ui.horizontalSlider_XC.setValue(int(slider_xc_val))
         self.ui.horizontalSlider_YC.setValue(int(slider_yc_val))
         self.set_c_dialog.accept()
+        self.set_c_dialog.deleteLater()
         self.set_c_dialog = None
 
     @Slot()
@@ -350,11 +341,9 @@ class MJSet(MyWindowMandelbrotJulia):
         self.mode = self.ui.comboBox_Set.currentText()
         if self.mode == 'julia':
             self.ui.frame.setMinimumSize(QSize(630, 517))
-            # self.ui.frame.resize(QSize(630, 517))
             self.ui.groupbox_C.setVisible(True)
         elif self.mode == 'mandelbrot':
             self.ui.frame.setMinimumSize(QSize(630, 630))
-            # self.ui.frame.resize(QSize(630, 630))
             self.ui.groupbox_C.setVisible(False)
         if not self.isFullScreen():
             self.adjustSize()
@@ -403,6 +392,7 @@ class MJSet(MyWindowMandelbrotJulia):
         self.ax.set_xlim(xmin, xmax)
         self.ax.set_ylim(ymin, ymax)
         self.set_lim_dialog.accept()
+        self.set_lim_dialog.deleteLater()
         self.set_lim_dialog = None
 
     def save_image(self):
