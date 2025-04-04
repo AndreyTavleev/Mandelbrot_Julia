@@ -5,13 +5,15 @@ import matplotlib
 import numpy as np
 from PySide6.QtCore import Slot, QSize
 from PySide6.QtWidgets import QApplication, QDialog, QVBoxLayout, QMainWindow, QFileDialog, QMessageBox
+from matplotlib import colors
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
 
 from Mandelbrot_Julia import mandelbrot_julia_set
-from ui_form_DialogSave import Ui_Save
-from ui_form_DialogSetLim import Ui_SetLimits
 from ui_form_MandelbrotJulia import Ui_MainWindowMandelbrotJulia
+from ui_form_DialogSetLim import Ui_SetLimits
+from ui_form_setShading import Ui_setShading
+from ui_form_DialogSave import Ui_Save
 from ui_form_setC import Ui_setC
 
 matplotlib.use('Qt5Agg')
@@ -60,6 +62,11 @@ class DialogSetC(BaseDialog):
         self.setTabOrder(self.ui.lineEdit_rhoC, self.ui.lineEdit_phiC)
 
 
+class DialogSetShading(BaseDialog):
+    def __init__(self, parent=None):
+        super().__init__(Ui_setShading, parent)
+
+
 class MyWindowMandelbrotJulia(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -74,22 +81,22 @@ class MJSet(MyWindowMandelbrotJulia):
         self.horizon = 2e50
         self.x_c_0 = -0.8000
         self.y_c_0 = -0.1560
-        self.x_c = -0.8000
-        self.y_c = -0.1560
+        self.x_c = self.x_c_0
+        self.y_c = self.y_c_0
         self.height = 1000
         self.length = 1000
-        self.colormap = 'jet'
+        self.colourmap = 'jet'
         self.slider_move = False
-        self.slider_n = None
         self.rebuild = False
         self.set_lim_dialog = None
         self.save_image_dialog = None
-        self.save_box = None
-        self.worker = None
-        self.thread = None
-        self.fname = None
         self.power = 2
         self.set_c_dialog = None
+        self.shading_dialog = None
+        self.shading = False
+        self.azdeg = None
+        self.altdeg = None
+        self.vert_exag = None
 
         self.ui.groupbox_C.setVisible(False)
 
@@ -100,22 +107,22 @@ class MJSet(MyWindowMandelbrotJulia):
         self.ui.comboBox_Power.addItems(['2', '3', '4', '5', '6', '7', '8'])
         self.ui.comboBox_Power.setCurrentText('2')
 
-        self.sc = MplCanvas(self)
-        self.ax = self.sc.ax
-        self.ax.imshow([[0]], origin="lower", cmap=self.colormap)  # Empty initial image
+        sc = MplCanvas(self)
+        self.ax = sc.ax
+        self.fig = sc.fig
+        self.ax.imshow([[0]], origin="lower", cmap=self.colourmap)  # Empty initial image
         self.ax.set(xlim=(self.xmin_0, self.xmax_0), ylim=(self.ymin_0, self.ymax_0))
-        # self.ax.callbacks.connect("xlim_changed", self.ax_update)
         self.ax.callbacks.connect("ylim_changed", self.ax_update)
         self.ax.set(xlim=(self.xmin_0, self.xmax_0), ylim=(self.ymin_0, self.ymax_0))
-        im = self.sc.ax.images[0]
+        im = self.ax.images[0]
         im.set(clim=(im.get_array().min(), im.get_array().max()))
-        self.sc.fig.tight_layout()
+        self.fig.tight_layout()
         self.ui.lineEdit_N.setText(f'{self.n}')
         self.ui.lineEdit_H.setText(f'{self.horizon:.1e}')
 
-        toolbar_n = NavigationToolbar(self.sc, self)
+        toolbar_n = NavigationToolbar(sc, self)
         layout = QVBoxLayout()
-        layout.addWidget(self.sc)
+        layout.addWidget(sc)
         layout.addWidget(toolbar_n)
         self.ui.frame.setLayout(layout)
 
@@ -128,8 +135,8 @@ class MJSet(MyWindowMandelbrotJulia):
         ini_slider_xc_val = (self.x_c_0 + 1) / delta_slider_c
         ini_slider_yc_val = (self.y_c_0 + 1) / delta_slider_c
 
-        self.ui.horizontalSlider_XC.setValue(int(ini_slider_xc_val))
-        self.ui.horizontalSlider_YC.setValue(int(ini_slider_yc_val))
+        self.ui.horizontalSlider_XC.setValue(round(ini_slider_xc_val))
+        self.ui.horizontalSlider_YC.setValue(round(ini_slider_yc_val))
         self.ui.horizontalSlider_XC.valueChanged.connect(lambda: self.set_xyc('x'))
         self.ui.horizontalSlider_YC.valueChanged.connect(lambda: self.set_xyc('y'))
         self.ui.pushButton_ResetC.clicked.connect(self.reset_c)
@@ -141,11 +148,16 @@ class MJSet(MyWindowMandelbrotJulia):
             f'C = {self.x_c:.4f} {self.y_c:+.4f}\U0001D456 = {rho:.4f}\U000022C5exp({phi:.4f}\U0001D456)')
 
         self.ui.comboBox_Colourmap.addItems(plt.colormaps())
-        self.ui.comboBox_Colourmap.setCurrentText(self.colormap)
-        self.ui.comboBox_Colourmap.activated.connect(self.colormap_update)
+        self.ui.comboBox_Colourmap.setCurrentText(self.colourmap)
+        self.ui.comboBox_Colourmap.activated.connect(self.colourmap_update)
+        self.ui.pushButton_setShading.clicked.connect(self.set_shading_dialog)
+        self.ui.pushButton_removeShading.clicked.connect(self.remove_shading)
+
         self.ui.pushButton_Rebuild.clicked.connect(self.rebuild_im)
         self.ui.pushButton_Reset.clicked.connect(self.reset_im)
 
+        self.ui.pushButton_zoom_plus.clicked.connect(lambda: self.zoom('plus'))
+        self.ui.pushButton_zoom_minus.clicked.connect(lambda: self.zoom('minus'))
         self.ui.pushButton_NewLims.clicked.connect(self.set_limits_dialog)
         self.ui.pushButton_ResetLims.clicked.connect(self.reset_lims)
 
@@ -157,7 +169,7 @@ class MJSet(MyWindowMandelbrotJulia):
             self.horizon = 4
             self.ui.lineEdit_H.setText('4')
         self.ax.set_autoscale_on(False)  # Otherwise, infinite loop
-        im = self.sc.ax.images[0]
+        im = self.ax.images[0]
         xmin, xmax, ymin, ymax = np.float64([*self.ax.get_xlim(), *self.ax.get_ylim()])
         print('lims =', xmin, xmax, ymin, ymax)
         self.ui.label_limX.setText(f'({xmin:.16f},\n {xmax:.16f})')
@@ -167,19 +179,23 @@ class MJSet(MyWindowMandelbrotJulia):
             print('x_c, y_c =', self.x_c, self.y_c)
         print('n, diff =', n, xmax - xmin, ymax - ymin)
         print(xmin, xmax, ymin, ymax, n, self.horizon, self.length, self.height)
-        im.set(data=mandelbrot_julia_set(xmin, xmax, ymin, ymax, horizon=self.horizon,
-                                         length=self.length, height=self.height, n=n,
-                                         x_c=self.x_c, y_c=self.y_c, power=self.power, mode=self.mode)[2].T,
-               extent=(xmin, xmax, ymin, ymax), cmap=self.colormap)
-        # light = colors.LightSource(azdeg=315, altdeg=10)  # create a Light Source, coming from somewhere
-        # data = mandelbrot_set(xmin, xmax, ymin, ymax, height=1000, length=1000, n=n, horizon=2e50)[2].T
-        # data = light.shade(data, cmap=plt.get_cmap('hot'), vert_exag=1.5,
-        #                    norm=colors.PowerNorm(0.3), blend_mode='hsv')
-        # im.set(data=data, extent=(*ax.get_xlim(), *ax.get_ylim()))
+        if not self.shading:
+            im.set(data=mandelbrot_julia_set(xmin, xmax, ymin, ymax, horizon=self.horizon,
+                                             length=self.length, height=self.height, n=n,
+                                             x_c=self.x_c, y_c=self.y_c, power=self.power, mode=self.mode)[2].T,
+                   extent=(xmin, xmax, ymin, ymax), cmap=self.colourmap)
+        else:
+            light = colors.LightSource(azdeg=self.azdeg, altdeg=self.altdeg)
+            data = mandelbrot_julia_set(xmin, xmax, ymin, ymax, horizon=self.horizon,
+                                        length=self.length, height=self.height, n=n,
+                                        x_c=self.x_c, y_c=self.y_c, power=self.power, mode=self.mode)[2].T
+            data = light.shade(data, cmap=plt.get_cmap(self.colourmap), vert_exag=self.vert_exag,
+                               norm=colors.PowerNorm(0.3), blend_mode='hsv')
+            im.set(data=data, extent=(xmin, xmax, ymin, ymax))
         print('min, max =', im.get_array().min(), im.get_array().max(), '\n')
         im.set(clim=(im.get_array().min(), im.get_array().max()))
-        self.ax.figure.canvas.draw_idle()
-        self.sc.fig.tight_layout()
+        self.fig.canvas.draw_idle()
+        self.fig.tight_layout()
 
     @property
     def xmin_0(self):
@@ -212,7 +228,6 @@ class MJSet(MyWindowMandelbrotJulia):
     @property
     def n(self):
         if self.rebuild:
-            self.rebuild = False
             nn = int(float(self.ui.lineEdit_N.text()))
             self.ui.lineEdit_N.setText(str(nn))
             return nn
@@ -239,6 +254,7 @@ class MJSet(MyWindowMandelbrotJulia):
 
     def change_n(self):
         self.slider_move = True
+        self.rebuild = False
         self.ax_update()
         self.ui.lineEdit_N.setText(f'{self.n}')
 
@@ -265,8 +281,8 @@ class MJSet(MyWindowMandelbrotJulia):
         delta_slider_c = 5e-4
         ini_slider_xc_val = (self.x_c_0 + 1) / delta_slider_c
         ini_slider_yc_val = (self.y_c_0 + 1) / delta_slider_c
-        self.ui.horizontalSlider_XC.setValue(int(ini_slider_xc_val))
-        self.ui.horizontalSlider_YC.setValue(int(ini_slider_yc_val))
+        self.ui.horizontalSlider_XC.setValue(round(ini_slider_xc_val))
+        self.ui.horizontalSlider_YC.setValue(round(ini_slider_yc_val))
 
     def set_c_dial(self):
         self.set_c_dialog = DialogSetC()
@@ -307,16 +323,59 @@ class MJSet(MyWindowMandelbrotJulia):
         slider_xc_val = (self.x_c + 1) / delta_slider_c
         slider_yc_val = (self.y_c + 1) / delta_slider_c
 
-        self.ui.horizontalSlider_XC.setValue(int(slider_xc_val))
-        self.ui.horizontalSlider_YC.setValue(int(slider_yc_val))
+        self.ui.horizontalSlider_XC.setValue(round(slider_xc_val))
+        self.ui.horizontalSlider_YC.setValue(round(slider_yc_val))
         self.set_c_dialog.accept()
         self.set_c_dialog.deleteLater()
         self.set_c_dialog = None
 
     @Slot()
-    def colormap_update(self):
-        self.colormap = self.ui.comboBox_Colourmap.currentText()
+    def colourmap_update(self):
+        self.colourmap = self.ui.comboBox_Colourmap.currentText()
+        if not self.shading:
+            im = self.ax.images[0]
+            im.set(cmap=self.colourmap)
+            self.fig.canvas.draw_idle()
+        else:
+            self.ax_update()
+
+    def set_shading_dialog(self):
+        self.shading_dialog = DialogSetShading()
+        if self.shading:
+            self.shading_dialog.ui.lineEdit_azimuth.setText(str(self.azdeg))
+            self.shading_dialog.ui.lineEdit_altitude.setText(str(self.altdeg))
+            self.shading_dialog.ui.lineEdit_vert_exag.setText(str(self.vert_exag))
+        else:
+            self.shading_dialog.ui.lineEdit_azimuth.setText('315')
+            self.shading_dialog.ui.lineEdit_altitude.setText('45')
+            self.shading_dialog.ui.lineEdit_vert_exag.setText('1')
+        self.shading_dialog.ui.pushButton_setShading.clicked.connect(self.set_shading)
+        self.shading_dialog.exec()
+
+    def set_shading(self):
+        self.shading = True
+        self.azdeg = float(self.shading_dialog.ui.lineEdit_azimuth.text())
+        if self.azdeg < 0:
+            self.azdeg = 0
+        elif self.azdeg > 360:
+            self.azdeg = 360
+        self.altdeg = float(self.shading_dialog.ui.lineEdit_altitude.text())
+        if self.altdeg < 0:
+            self.altdeg = 0
+        elif self.altdeg > 90:
+            self.altdeg = 90
+        self.vert_exag = float(self.shading_dialog.ui.lineEdit_vert_exag.text())
         self.ax_update()
+        self.shading_dialog.accept()
+        self.shading_dialog.deleteLater()
+        self.shading_dialog = None
+
+    def remove_shading(self):
+        if not self.shading:
+            pass
+        else:
+            self.shading = False
+            self.ax_update()
 
     @Slot()
     def rebuild_im(self):
@@ -395,6 +454,20 @@ class MJSet(MyWindowMandelbrotJulia):
         self.set_lim_dialog.deleteLater()
         self.set_lim_dialog = None
 
+    def zoom(self, regime):
+        xmin, xmax = self.ax.get_xlim()
+        ymin, ymax = self.ax.get_ylim()
+        if regime == 'plus':
+            scale = 2.0
+        elif regime == 'minus':
+            scale = 0.5
+        xmin_new = (xmin + xmax) / 2 - (xmax - xmin) / (2 * scale)
+        xmax_new = (xmin + xmax) / 2 + (xmax - xmin) / (2 * scale)
+        ymin_new = (ymin + ymax) / 2 - (ymax - ymin) / (2 * scale)
+        ymax_new = (ymin + ymax) / 2 + (ymax - ymin) / (2 * scale)
+        self.ax.set_xlim(xmin_new, xmax_new)
+        self.ax.set_ylim(ymin_new, ymax_new)
+
     def save_image(self):
         self.save_image_dialog = DialogSave()
         self.save_image_dialog.ui.lineEdit_L.editingFinished.connect(lambda: self.edit_size('L'))
@@ -438,20 +511,28 @@ class MJSet(MyWindowMandelbrotJulia):
         x, y, z = mandelbrot_julia_set(xmin, xmax, ymin, ymax, self.x_c, self.y_c, img_height, img_width,
                                        self.n, self.horizon, power=self.power, mode=self.mode)
         if self.save_image_dialog.ui.checkBox_withAxes.isChecked():
-            ticks = np.arange(0, img_width, dpi / 2)
-            x_ticks = xmin + (xmax - xmin) * ticks / img_width
-            x_ticks = [f'{x:.4f}' for x in x_ticks]
             fig, ax = plt.subplots(figsize=(length, height), dpi=dpi)
-            ax.set_xticks(ticks, x_ticks, rotation=-45, ha='left')
-            y_ticks = ymin + (ymax - ymin) * ticks / img_width
-            y_ticks = [f'{x:.4f}' for x in y_ticks]
-            ax.set_yticks(ticks, y_ticks)
-            ax.imshow(z.T, origin='lower', cmap=self.colormap)
+            if not self.shading:
+                ax.imshow(z.T, origin='lower', cmap=self.colourmap, extent=(xmin, xmax, ymin, ymax))
+            else:
+                light = colors.LightSource(azdeg=self.azdeg, altdeg=self.altdeg)
+                data = light.shade(z.T, cmap=plt.get_cmap(self.colourmap), vert_exag=self.vert_exag,
+                                   norm=colors.PowerNorm(0.3), blend_mode='hsv')
+                ax.imshow(data, extent=(xmin, xmax, ymin, ymax), origin='lower')
+            ax.tick_params(labelsize='xx-large')
+            ax.xaxis.offsetText.set_fontsize('xx-large')
+            ax.yaxis.offsetText.set_fontsize('xx-large')
             plt.tight_layout()
             plt.savefig(filename, dpi=dpi)
         else:
-            plt.imsave(filename, z.T, dpi=dpi, cmap=self.colormap, origin='lower')
-        self.save_box = QMessageBox.information(self, "Save File", f'Image is saved to {filename}')
+            if not self.shading:
+                plt.imsave(filename, z.T, dpi=dpi, cmap=self.colourmap, origin='lower')
+            else:
+                light = colors.LightSource(azdeg=self.azdeg, altdeg=self.altdeg)
+                data = light.shade(z.T, cmap=plt.get_cmap(self.colourmap), vert_exag=self.vert_exag,
+                                   norm=colors.PowerNorm(0.3), blend_mode='hsv')
+                plt.imsave(filename, data, dpi=dpi, origin='lower')
+        QMessageBox.information(self, "Save File", f'Image is saved to {filename}')
         self.save_image_dialog.ui.pushButton_Save.setEnabled(True)
 
     def edit_size_label(self):
@@ -463,7 +544,6 @@ class MJSet(MyWindowMandelbrotJulia):
     def edit_size(self, regime):
         if self.save_image_dialog.ui.checkBox_lockAR.isChecked():
             aspect_ratio = np.diff(self.ax.get_ylim())[0] / np.diff(self.ax.get_xlim())[0]
-            print(aspect_ratio)
             if regime == 'L':
                 ll = int(self.save_image_dialog.ui.lineEdit_L.text())
                 hh = round(ll * aspect_ratio)

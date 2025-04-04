@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'form.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.8.3
+## Created by: Qt User Interface Compiler version 6.9.0
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -20,8 +20,8 @@ class Ui_MainWindowMandelbrotJulia(object):
     def setupUi(self, MainWindowMandelbrotJulia):
         if not MainWindowMandelbrotJulia.objectName():
             MainWindowMandelbrotJulia.setObjectName(u"MainWindowMandelbrotJulia")
-        MainWindowMandelbrotJulia.resize(844, 721)
-        MainWindowMandelbrotJulia.setMinimumSize(QSize(844, 721))
+        MainWindowMandelbrotJulia.resize(844, 763)
+        MainWindowMandelbrotJulia.setMinimumSize(QSize(844, 763))
         MainWindowMandelbrotJulia.setMaximumSize(QSize(16777215, 16777215))
         self.centralwidget = QWidget(MainWindowMandelbrotJulia)
         self.centralwidget.setObjectName(u"centralwidget")
@@ -39,7 +39,8 @@ class Ui_MainWindowMandelbrotJulia(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.frame.sizePolicy().hasHeightForWidth())
         self.frame.setSizePolicy(sizePolicy)
-        self.frame.setMinimumSize(QSize(630, 517))
+        # self.frame.setMinimumSize(QSize(630, 517))
+        self.frame.setMinimumSize(QSize(630, 630))
         self.frame.setFrameShape(QFrame.Shape.StyledPanel)
         self.frame.setFrameShadow(QFrame.Shadow.Raised)
 
@@ -218,6 +219,20 @@ class Ui_MainWindowMandelbrotJulia(object):
 
         self.verticalLayout_HNPColour.addWidget(self.comboBox_Colourmap)
 
+        self.horizontalLayout = QHBoxLayout()
+        self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.pushButton_setShading = QPushButton(self.centralwidget)
+        self.pushButton_setShading.setObjectName(u"pushButton_setShading")
+
+        self.horizontalLayout.addWidget(self.pushButton_setShading, 0, Qt.AlignmentFlag.AlignHCenter)
+
+        self.pushButton_removeShading = QPushButton(self.centralwidget)
+        self.pushButton_removeShading.setObjectName(u"pushButton_removeShading")
+
+        self.horizontalLayout.addWidget(self.pushButton_removeShading, 0, Qt.AlignmentFlag.AlignHCenter)
+
+        self.verticalLayout_HNPColour.addLayout(self.horizontalLayout)
+
         self.line_4 = QFrame(self.centralwidget)
         self.line_4.setObjectName(u"line_4")
         self.line_4.setFrameShape(QFrame.Shape.HLine)
@@ -244,50 +259,57 @@ class Ui_MainWindowMandelbrotJulia(object):
         self.label_CurGrid = QLabel(self.centralwidget)
         self.label_CurGrid.setObjectName(u"label_CurGrid")
 
-        self.verticalLayout_HNPColour.addWidget(self.label_CurGrid, 0,
-                                                Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
+        self.verticalLayout_HNPColour.addWidget(self.label_CurGrid, 0, Qt.AlignmentFlag.AlignHCenter)
 
         self.label_limX_1 = QLabel(self.centralwidget)
         self.label_limX_1.setObjectName(u"label_limX_1")
 
-        self.verticalLayout_HNPColour.addWidget(self.label_limX_1, 0,
-                                                Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
+        self.verticalLayout_HNPColour.addWidget(self.label_limX_1, 0, Qt.AlignmentFlag.AlignHCenter)
 
         self.label_limX = QLabel(self.centralwidget)
         self.label_limX.setObjectName(u"label_limX")
         self.label_limX.setTextInteractionFlags(
             Qt.TextInteractionFlag.LinksAccessibleByMouse | Qt.TextInteractionFlag.TextSelectableByMouse)
 
-        self.verticalLayout_HNPColour.addWidget(self.label_limX, 0,
-                                                Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
+        self.verticalLayout_HNPColour.addWidget(self.label_limX, 0, Qt.AlignmentFlag.AlignHCenter)
 
         self.label_limY_1 = QLabel(self.centralwidget)
         self.label_limY_1.setObjectName(u"label_limY_1")
 
-        self.verticalLayout_HNPColour.addWidget(self.label_limY_1, 0,
-                                                Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
+        self.verticalLayout_HNPColour.addWidget(self.label_limY_1, 0, Qt.AlignmentFlag.AlignHCenter)
 
         self.label_limY = QLabel(self.centralwidget)
         self.label_limY.setObjectName(u"label_limY")
         self.label_limY.setTextInteractionFlags(
             Qt.TextInteractionFlag.LinksAccessibleByMouse | Qt.TextInteractionFlag.TextSelectableByMouse)
 
-        self.verticalLayout_HNPColour.addWidget(self.label_limY, 0,
-                                                Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
+        self.verticalLayout_HNPColour.addWidget(self.label_limY, 0, Qt.AlignmentFlag.AlignHCenter)
 
         self.label_coordC_1 = QLabel(self.centralwidget)
         self.label_coordC_1.setObjectName(u"label_coordC_1")
 
-        self.verticalLayout_HNPColour.addWidget(self.label_coordC_1, 0,
-                                                Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
+        self.verticalLayout_HNPColour.addWidget(self.label_coordC_1, 0, Qt.AlignmentFlag.AlignHCenter)
 
         self.label_coordC = QLabel(self.centralwidget)
         self.label_coordC.setObjectName(u"label_coordC")
         self.label_coordC.setTextInteractionFlags(
             Qt.TextInteractionFlag.LinksAccessibleByMouse | Qt.TextInteractionFlag.TextSelectableByMouse)
 
-        self.verticalLayout_HNPColour.addWidget(self.label_coordC, 0,
-                                                Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
+        self.verticalLayout_HNPColour.addWidget(self.label_coordC, 0, Qt.AlignmentFlag.AlignHCenter)
+
+        self.horizontalLayout_zoom = QHBoxLayout()
+        self.horizontalLayout_zoom.setObjectName(u"horizontalLayout_zoom")
+        self.pushButton_zoom_plus = QPushButton(self.centralwidget)
+        self.pushButton_zoom_plus.setObjectName(u"pushButton_zoom_plus")
+
+        self.horizontalLayout_zoom.addWidget(self.pushButton_zoom_plus)
+
+        self.pushButton_zoom_minus = QPushButton(self.centralwidget)
+        self.pushButton_zoom_minus.setObjectName(u"pushButton_zoom_minus")
+
+        self.horizontalLayout_zoom.addWidget(self.pushButton_zoom_minus)
+
+        self.verticalLayout_HNPColour.addLayout(self.horizontalLayout_zoom)
 
         self.pushButton_NewLims = QPushButton(self.centralwidget)
         self.pushButton_NewLims.setObjectName(u"pushButton_NewLims")
@@ -297,7 +319,7 @@ class Ui_MainWindowMandelbrotJulia(object):
         self.pushButton_ResetLims = QPushButton(self.centralwidget)
         self.pushButton_ResetLims.setObjectName(u"pushButton_ResetLims")
 
-        self.verticalLayout_HNPColour.addWidget(self.pushButton_ResetLims, 0, Qt.AlignmentFlag.AlignVCenter)
+        self.verticalLayout_HNPColour.addWidget(self.pushButton_ResetLims)
 
         self.verticalSpacer_3 = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
 
@@ -334,6 +356,10 @@ class Ui_MainWindowMandelbrotJulia(object):
         self.pushButton_Rebuild.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"Rebuild", None))
         self.pushButton_Reset.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"Reset", None))
         self.label_Colourmap.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"Colourmap", None))
+        self.pushButton_setShading.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"Set \n"
+                                                                                                   "shading", None))
+        self.pushButton_removeShading.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"Remove \n"
+                                                                                                      "shading", None))
         self.pushButton_Save.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"Save", None))
         self.label_CurGrid.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"Current grid:", None))
         self.label_limX_1.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"X-axis limits:", None))
@@ -342,6 +368,8 @@ class Ui_MainWindowMandelbrotJulia(object):
         self.label_limY.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"TextLabel", None))
         self.label_coordC_1.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"Centre:", None))
         self.label_coordC.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"TextLabel", None))
+        self.pushButton_zoom_plus.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"Zoom+", None))
+        self.pushButton_zoom_minus.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"Zoom-", None))
         self.pushButton_NewLims.setText(
             QCoreApplication.translate("MainWindowMandelbrotJulia", u"Set new limits", None))
         self.pushButton_ResetLims.setText(

@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'form.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.8.3
+## Created by: Qt User Interface Compiler version 6.9.0
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -124,7 +124,7 @@ class Ui_setC(object):
     # setupUi
 
     def retranslateUi(self, setC):
-        setC.setWindowTitle(QCoreApplication.translate("setC", u"Dialog", None))
+        setC.setWindowTitle(QCoreApplication.translate("setC", u"Set C", None))
         self.label_rhoC.setText(QCoreApplication.translate("setC", u"Modulus, rho:", None))
         self.label_3.setText(QCoreApplication.translate("setC", u"Re(C):", None))
         self.label_4.setText(QCoreApplication.translate("setC", u"Im(C):", None))

@@ -3,29 +3,22 @@
 ################################################################################
 ## Form generated from reading UI file 'form.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.8.3
+## Created by: Qt User Interface Compiler version 6.9.0
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
 
-from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
-    QMetaObject, QObject, QPoint, QRect,
-    QSize, QTime, QUrl, Qt)
-from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
-    QFont, QFontDatabase, QGradient, QIcon,
-    QImage, QKeySequence, QLinearGradient, QPainter,
-    QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QCheckBox, QDialog, QGridLayout,
-    QLabel, QLineEdit, QPushButton, QSizePolicy,
-    QWidget)
+from PySide6.QtCore import QCoreApplication, QMetaObject, QSize, Qt
+from PySide6.QtWidgets import QCheckBox, QGridLayout, QLabel, QLineEdit, QPushButton
+
 
 class Ui_Save(object):
     def setupUi(self, Save):
         if not Save.objectName():
             Save.setObjectName(u"Save")
         Save.resize(265, 251)
-        Save.setMinimumSize(QSize(244, 251))
-        Save.setMaximumSize(QSize(16777215, 16777215))
+        Save.setMinimumSize(QSize(265, 251))
+        Save.setMaximumSize(QSize(265, 251))
         self.gridLayout_2 = QGridLayout(Save)
         self.gridLayout_2.setObjectName(u"gridLayout_2")
         self.gridLayout = QGridLayout()
@@ -82,13 +75,12 @@ class Ui_Save(object):
 
         self.gridLayout.addWidget(self.checkBox_lockAR, 3, 1, 1, 1)
 
-
         self.gridLayout_2.addLayout(self.gridLayout, 0, 0, 1, 1)
-
 
         self.retranslateUi(Save)
 
         QMetaObject.connectSlotsByName(Save)
+
     # setupUi
 
     def retranslateUi(self, Save):
@@ -101,4 +93,3 @@ class Ui_Save(object):
         self.pushButton_Save.setText(QCoreApplication.translate("Save", u"Save", None))
         self.checkBox_lockAR.setText(QCoreApplication.translate("Save", u"Lock Aspect Ratio", None))
     # retranslateUi
-
