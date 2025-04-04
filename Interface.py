@@ -4,8 +4,8 @@ import sys
 import matplotlib
 import numpy as np
 from PySide6.QtCore import Slot, QSize, Qt, QTimer
-from PySide6.QtGui import QPalette
-from PySide6.QtWidgets import QApplication, QDialog, QVBoxLayout, QMainWindow, QFileDialog, QMessageBox
+from PySide6.QtGui import QPalette, QIcon, QPixmap
+from PySide6.QtWidgets import QApplication, QDialog, QVBoxLayout, QMainWindow, QFileDialog, QMessageBox, QComboBox
 from matplotlib import colors
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
@@ -99,6 +99,7 @@ class MJSet(MyWindowMandelbrotJulia):
         self.altdeg = None
         self.vert_exag = None
         self.application = application
+        self.toolbar = None
 
         self.ui.groupbox_C.setVisible(False)
 
@@ -109,9 +110,9 @@ class MJSet(MyWindowMandelbrotJulia):
         self.ui.comboBox_Power.addItems(['2', '3', '4', '5', '6', '7', '8'])
         self.ui.comboBox_Power.setCurrentText('2')
 
-        sc = MplCanvas(self)
-        self.ax = sc.ax
-        self.fig = sc.fig
+        self.sc = MplCanvas(self)
+        self.ax = self.sc.ax
+        self.fig = self.sc.fig
         self.fig.patch.set_facecolor(self.ui.centralwidget.palette().color(QPalette.Window).name())
         if self.application.styleHints().colorScheme() == Qt.ColorScheme.Dark:
             self.ax.tick_params(axis='both', colors='w')
@@ -127,11 +128,11 @@ class MJSet(MyWindowMandelbrotJulia):
         self.ui.lineEdit_N.setText(f'{self.n}')
         self.ui.lineEdit_H.setText(f'{self.horizon:.1e}')
 
-        toolbar_n = NavigationToolbar(sc, self)
-        layout = QVBoxLayout()
-        layout.addWidget(sc)
-        layout.addWidget(toolbar_n)
-        self.ui.frame.setLayout(layout)
+        self.toolbar = NavigationToolbar(self.sc, self)
+        self.main_layout = QVBoxLayout()
+        self.main_layout.addWidget(self.sc)
+        self.main_layout.addWidget(self.toolbar)
+        self.ui.frame.setLayout(self.main_layout)
 
         self.ui.horizontalSlider_N.setValue(self.n)
 
@@ -154,7 +155,13 @@ class MJSet(MyWindowMandelbrotJulia):
         self.ui.label_C.setText(
             f'C = {self.x_c:.4f} {self.y_c:+.4f}\U0001D456 = {rho:.4f}\U000022C5exp({phi:.4f}\U0001D456)')
 
-        self.ui.comboBox_Colourmap.addItems(plt.colormaps())
+        for i, cmap in enumerate(plt.colormaps()):
+            self.ui.comboBox_Colourmap.setIconSize(QPixmap(f'colour_pic/{cmap}.png').scaled(100, 20).size())
+            pixmap = QPixmap(f'colour_pic/{cmap}.png').scaled(100, 20)
+            icon = QIcon(pixmap)
+            self.ui.comboBox_Colourmap.addItem(icon, cmap)
+        self.ui.comboBox_Colourmap.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLengthWithIcon)
+        self.ui.comboBox_Colourmap.setMinimumContentsLength(3)
         self.ui.comboBox_Colourmap.setCurrentText(self.colourmap)
         self.ui.comboBox_Colourmap.activated.connect(self.colourmap_update)
         self.ui.pushButton_setShading.clicked.connect(self.set_shading_dialog)
@@ -353,6 +360,9 @@ class MJSet(MyWindowMandelbrotJulia):
         else:
             self.ax.tick_params(axis='both', colors='k')
         self.fig.canvas.draw_idle()
+        self.main_layout.removeWidget(self.toolbar)
+        self.toolbar = NavigationToolbar(self.sc, self)
+        self.main_layout.addWidget(self.toolbar)
 
     def set_shading_dialog(self):
         self.shading_dialog = DialogSetShading()
