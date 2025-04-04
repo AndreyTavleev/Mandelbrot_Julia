@@ -3,7 +3,8 @@ import sys
 
 import matplotlib
 import numpy as np
-from PySide6.QtCore import Slot, QSize
+from PySide6.QtCore import Slot, QSize, Qt, QTimer
+from PySide6.QtGui import QPalette
 from PySide6.QtWidgets import QApplication, QDialog, QVBoxLayout, QMainWindow, QFileDialog, QMessageBox
 from matplotlib import colors
 from matplotlib import pyplot as plt
@@ -75,7 +76,7 @@ class MyWindowMandelbrotJulia(QMainWindow):
 
 
 class MJSet(MyWindowMandelbrotJulia):
-    def __init__(self, parent=None):
+    def __init__(self, application: QApplication = None, parent=None):
         super().__init__(parent)
         self.mode = 'mandelbrot'
         self.horizon = 2e50
@@ -97,6 +98,7 @@ class MJSet(MyWindowMandelbrotJulia):
         self.azdeg = None
         self.altdeg = None
         self.vert_exag = None
+        self.application = application
 
         self.ui.groupbox_C.setVisible(False)
 
@@ -110,6 +112,11 @@ class MJSet(MyWindowMandelbrotJulia):
         sc = MplCanvas(self)
         self.ax = sc.ax
         self.fig = sc.fig
+        self.fig.patch.set_facecolor(self.ui.centralwidget.palette().color(QPalette.Window).name())
+        if self.application.styleHints().colorScheme() == Qt.ColorScheme.Dark:
+            self.ax.tick_params(axis='both', colors='w')
+        self.application.styleHints().colorSchemeChanged.connect(
+            lambda: QTimer.singleShot(100, self.colour_scheme_changed))
         self.ax.imshow([[0]], origin="lower", cmap=self.colourmap)  # Empty initial image
         self.ax.set(xlim=(self.xmin_0, self.xmax_0), ylim=(self.ymin_0, self.ymax_0))
         self.ax.callbacks.connect("ylim_changed", self.ax_update)
@@ -339,6 +346,14 @@ class MJSet(MyWindowMandelbrotJulia):
         else:
             self.ax_update()
 
+    def colour_scheme_changed(self):
+        self.fig.patch.set_facecolor(self.ui.centralwidget.palette().color(QPalette.Window).name())
+        if self.application.styleHints().colorScheme() == Qt.ColorScheme.Dark:
+            self.ax.tick_params(axis='both', colors='w')
+        else:
+            self.ax.tick_params(axis='both', colors='k')
+        self.fig.canvas.draw_idle()
+
     def set_shading_dialog(self):
         self.shading_dialog = DialogSetShading()
         if self.shading:
@@ -347,7 +362,7 @@ class MJSet(MyWindowMandelbrotJulia):
             self.shading_dialog.ui.lineEdit_vert_exag.setText(str(self.vert_exag))
         else:
             self.shading_dialog.ui.lineEdit_azimuth.setText('315')
-            self.shading_dialog.ui.lineEdit_altitude.setText('45')
+            self.shading_dialog.ui.lineEdit_altitude.setText('5')
             self.shading_dialog.ui.lineEdit_vert_exag.setText('1')
         self.shading_dialog.ui.pushButton_setShading.clicked.connect(self.set_shading)
         self.shading_dialog.exec()
@@ -557,6 +572,6 @@ class MJSet(MyWindowMandelbrotJulia):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = MJSet()
+    window = MJSet(app)
     window.show()
     sys.exit(app.exec())
