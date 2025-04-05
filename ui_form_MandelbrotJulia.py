@@ -20,8 +20,8 @@ class Ui_MainWindowMandelbrotJulia(object):
     def setupUi(self, MainWindowMandelbrotJulia):
         if not MainWindowMandelbrotJulia.objectName():
             MainWindowMandelbrotJulia.setObjectName(u"MainWindowMandelbrotJulia")
-        MainWindowMandelbrotJulia.resize(844, 763)
-        MainWindowMandelbrotJulia.setMinimumSize(QSize(844, 763))
+        MainWindowMandelbrotJulia.resize(850, 763)
+        MainWindowMandelbrotJulia.setMinimumSize(QSize(850, 763))
         MainWindowMandelbrotJulia.setMaximumSize(QSize(16777215, 16777215))
         self.centralwidget = QWidget(MainWindowMandelbrotJulia)
         self.centralwidget.setObjectName(u"centralwidget")
@@ -39,7 +39,7 @@ class Ui_MainWindowMandelbrotJulia(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.frame.sizePolicy().hasHeightForWidth())
         self.frame.setSizePolicy(sizePolicy)
-        self.frame.setMinimumSize(QSize(630, 630))
+        self.frame.setMinimumSize(QSize(630, 517))
         self.frame.setFrameShape(QFrame.Shape.StyledPanel)
         self.frame.setFrameShadow(QFrame.Shadow.Raised)
 
