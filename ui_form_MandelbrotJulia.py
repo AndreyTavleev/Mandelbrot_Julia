@@ -9,7 +9,7 @@
 ################################################################################
 
 from PySide6.QtCore import QCoreApplication, QMetaObject, QSize, Qt
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QFont, QIcon
 from PySide6.QtWidgets import (QComboBox, QFrame, QGridLayout,
                                QGroupBox, QHBoxLayout, QLabel, QLayout,
                                QLineEdit, QPushButton, QSizePolicy,
@@ -39,7 +39,6 @@ class Ui_MainWindowMandelbrotJulia(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.frame.sizePolicy().hasHeightForWidth())
         self.frame.setSizePolicy(sizePolicy)
-        # self.frame.setMinimumSize(QSize(630, 517))
         self.frame.setMinimumSize(QSize(630, 630))
         self.frame.setFrameShape(QFrame.Shape.StyledPanel)
         self.frame.setFrameShadow(QFrame.Shadow.Raised)
@@ -301,11 +300,15 @@ class Ui_MainWindowMandelbrotJulia(object):
         self.horizontalLayout_zoom.setObjectName(u"horizontalLayout_zoom")
         self.pushButton_zoom_plus = QPushButton(self.centralwidget)
         self.pushButton_zoom_plus.setObjectName(u"pushButton_zoom_plus")
+        icon = QIcon(QIcon.fromTheme(QIcon.ThemeIcon.ZoomIn))
+        self.pushButton_zoom_plus.setIcon(icon)
 
         self.horizontalLayout_zoom.addWidget(self.pushButton_zoom_plus)
 
         self.pushButton_zoom_minus = QPushButton(self.centralwidget)
         self.pushButton_zoom_minus.setObjectName(u"pushButton_zoom_minus")
+        icon1 = QIcon(QIcon.fromTheme(QIcon.ThemeIcon.ZoomOut))
+        self.pushButton_zoom_minus.setIcon(icon1)
 
         self.horizontalLayout_zoom.addWidget(self.pushButton_zoom_minus)
 
@@ -368,8 +371,8 @@ class Ui_MainWindowMandelbrotJulia(object):
         self.label_limY.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"TextLabel", None))
         self.label_coordC_1.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"Centre:", None))
         self.label_coordC.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"TextLabel", None))
-        self.pushButton_zoom_plus.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"Zoom+", None))
-        self.pushButton_zoom_minus.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"Zoom-", None))
+        self.pushButton_zoom_plus.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"Zoom", None))
+        self.pushButton_zoom_minus.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"Zoom", None))
         self.pushButton_NewLims.setText(
             QCoreApplication.translate("MainWindowMandelbrotJulia", u"Set new limits", None))
         self.pushButton_ResetLims.setText(

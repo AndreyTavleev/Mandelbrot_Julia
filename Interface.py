@@ -251,7 +251,10 @@ class MJSet(MyWindowMandelbrotJulia):
         else:
             xmin, xmax, ymin, ymax = np.float64([*self.ax.get_xlim(), *self.ax.get_ylim()])
             zoom = (self.xmax_0 - self.xmin_0) / (xmax - xmin)
-            res = int(100 * (1 + math.log10(zoom)))
+            if zoom > 1:
+                res = int(100 * (1 + math.log10(zoom)))
+            else:
+                res = 100
             self.ui.lineEdit_N.setText(f'{res}')
             # self.ui.horizontalSlider_N.setValue(res)
             # self.slider_move = False
