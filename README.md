@@ -9,8 +9,6 @@ parameters, customise colours and save the generated images.
 ![](im_1.png)
 ![](im_2.png)
 
----
-
 ## Contents 
 
 * [Installation](#installation)
@@ -21,8 +19,6 @@ parameters, customise colours and save the generated images.
 * [Adjustable parameters](#adjustable-parameters)
 * [Colours and Shading](#colours-and-shading)
 * [Saving](#saving)
-
----
 
 ## Installation
 
@@ -42,7 +38,6 @@ the code:
 pip3 install -r requirements.txt
 python3 Interface.py
 ```
----
 
 ## Theory of Mandelbrot and Julia fractals
 
@@ -92,8 +87,6 @@ The maximum number of iterations, $N$, is also a parameter
 and can be set by the user. The deeper the zoom into the set, 
 the larger the value of $N$ required.
 
----
-
 ## Setting the limits and exploring
 
 The application allows user to interactively explore 
@@ -139,8 +132,6 @@ of the centre are displayed above the Zoom buttons.
 Use the `Reset Limits` button to restore the default view range. 
 It varies depending on the set type and power.
 
----
-
 ## Adjustable parameters
 
 The GUI provides several options that the user can customise:
@@ -175,8 +166,6 @@ The current value of $C$ is displayed above the C-sliders.
 To return to the default value $C = -0.8 - 0.156i$,
 click the `Reset C` button.
 
----
-
 ## Colours and Shading
 
 The application offers customisable colour schemes 
@@ -201,8 +190,6 @@ and [tutorials](https://matplotlib.org/stable/gallery/showcase/mandelbrot.html).
 To revert to the flat colourmap display, click 
 the `Remove Shading` button.
 
----
-
 ## Saving
 
 Generated images can be exported in multiple formats 
@@ -218,11 +205,15 @@ shading and colourmap preferences.
 
 ---
 
-Overall, have fun! Some screenshots:
-![](im_3.png)
-![](im_4.png)
-![](im_5.png)
-![](im_6.png)
-![](im_7.png)
-![](im_8.png)
-![](im_9.png)
+Overall, have fun!
+<details>
+ <summary><i>Some screenshots:</i></summary>
+ 
+ ![](im_3.png)
+ ![](im_4.png)
+ ![](im_5.png)
+ ![](im_6.png)
+ ![](im_7.png)
+ ![](im_8.png)
+ ![](im_9.png)
+</details>
