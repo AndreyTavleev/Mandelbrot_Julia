@@ -6,6 +6,15 @@ user to explore them interactively. The user can zoom
 into different parts of the fractals, adjust calculation 
 parameters, customise colours and save the generated images.
 
+### Features:
+* Interactive visualisation of **Mandelbrot** and **Julia** sets
+* Support for arbitrary powers $k$ (from 2 to 8) in defining the sets
+* Zooming and panning for detailed exploration
+* Customisable calculation parameters
+* Various colourmaps, including user-defined ones
+* Shading options for enhanced visuals
+* Export images to common formats
+
 ![](im_1.png)
 ![](im_2.png)
 
