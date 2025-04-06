@@ -23,7 +23,7 @@ parameters, customise colours and save the generated images.
 ## Installation
 
 This Application requires Pyside 6.5+ and Python 3.11+. 
-The easiest way is to crate the virtual environment and run 
+The easiest way is to create the virtual environment and run 
 the code through it:
 
 ``` shell
@@ -194,7 +194,7 @@ For details see the [matplotlib documentation](https://matplotlib.org/stable/api
 and [tutorials](https://matplotlib.org/stable/gallery/showcase/mandelbrot.html).
 
 To revert to the flat colourmap display, click 
-the `Remove Shading` button.
+the `Remove shading` button.
 
 ## Saving
 
