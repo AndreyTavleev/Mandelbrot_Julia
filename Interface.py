@@ -79,20 +79,23 @@ class MyWindowMandelbrotJulia(QMainWindow):
 
 
 class DialogSetGradient(BaseDialog):
-    def __init__(self, parent=None):
+    def __init__(self, points=None, parent=None):
         super().__init__(Ui_setGradient, parent)
-        self.GradWidget = Gradient()
+        self.GradWidget = Gradient(points)
         self.ui.gridLayout.removeWidget(self.ui.GradWidget)
         self.ui.gridLayout.addWidget(self.GradWidget, 1, 0, 1, 4)
         self.ui.pushButton_Apply.setDefault(True)
 
 
 class Gradient(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, points=None, parent=None):
         super().__init__(parent)
 
         # [(position [0-1], QColor)]
-        self.points = [(1, 0.0, QColor(255, 0, 0)), (2, 1.0, QColor(0, 0, 255))]  # red and blue
+        if points is None:
+            self.points = [(1, 0.0, QColor(255, 0, 0)), (2, 1.0, QColor(0, 0, 255))]  # red and blue
+        else:
+            self.points = points
         self.dragging_index = None
         self.radius = 5
 
@@ -267,6 +270,8 @@ class MJSet(MyWindowMandelbrotJulia):
         self.application = application
         self.toolbar = None
         self.gradient_dialog = None
+        self.user_defined_colourmap = None
+        self.colourmap_created = False
 
         self.ui.groupbox_C.setVisible(False)
 
@@ -518,13 +523,15 @@ class MJSet(MyWindowMandelbrotJulia):
     @Slot()
     def colourmap_update(self):
         if self.ui.comboBox_Colourmap.currentIndex() == self.ui.comboBox_Colourmap.count() - 1:
-            self.gradient_dialog = DialogSetGradient()
+            self.gradient_dialog = DialogSetGradient(self.user_defined_colourmap)
             self.gradient_dialog.ui.pushButton_Apply.clicked.connect(self.create_and_set_colourmap)
             self.gradient_dialog.ui.pushButton_Reverse.clicked.connect(self.gradient_dialog.GradWidget.reverse_gradient)
             self.gradient_dialog.ui.pushButton_Save.clicked.connect(self.save_colourmap)
             self.gradient_dialog.ui.pushButton_Load.clicked.connect(self.load_colourmap)
             self.gradient_dialog.show()
         else:
+            self.colourmap_created = False
+            self.user_defined_colourmap = None
             self.colourmap = self.ui.comboBox_Colourmap.currentText()
             if not self.shading:
                 im = self.ax.images[0]
@@ -535,6 +542,8 @@ class MJSet(MyWindowMandelbrotJulia):
 
     def create_and_set_colourmap(self):
         self.colourmap = self.gradient_dialog.GradWidget.make_colourmap()
+        self.colourmap_created = True
+        self.user_defined_colourmap = self.gradient_dialog.GradWidget.points
         if not self.shading:
             im = self.ax.images[0]
             im.set(cmap=self.colourmap)
