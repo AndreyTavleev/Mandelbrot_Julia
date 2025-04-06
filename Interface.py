@@ -378,7 +378,7 @@ class MJSet(MyWindowMandelbrotJulia):
                                         length=self.length, height=self.height, n=n,
                                         x_c=self.x_c, y_c=self.y_c, power=self.power, mode=self.mode)[2].T
             data = light.shade(data, cmap=plt.get_cmap(self.colourmap), vert_exag=self.vert_exag,
-                               norm=colors.PowerNorm(0.3), blend_mode='hsv')
+                               blend_mode='hsv')
             im.set(data=data, extent=(xmin, xmax, ymin, ymax))
         print('min, max =', im.get_array().min(), im.get_array().max(), '\n')
         im.set(clim=(im.get_array().min(), im.get_array().max()))
@@ -757,7 +757,7 @@ class MJSet(MyWindowMandelbrotJulia):
             else:
                 light = colors.LightSource(azdeg=self.azdeg, altdeg=self.altdeg)
                 data = light.shade(z.T, cmap=plt.get_cmap(self.colourmap), vert_exag=self.vert_exag,
-                                   norm=colors.PowerNorm(0.3), blend_mode='hsv')
+                                   blend_mode='hsv')
                 ax.imshow(data, extent=(xmin, xmax, ymin, ymax), origin='lower')
             ax.tick_params(labelsize='xx-large')
             ax.xaxis.offsetText.set_fontsize('xx-large')
