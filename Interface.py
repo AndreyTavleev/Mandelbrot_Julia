@@ -3,15 +3,18 @@ import sys
 
 import matplotlib
 import numpy as np
-from PySide6.QtCore import Slot, QSize, Qt, QTimer
-from PySide6.QtGui import QPalette, QIcon, QPixmap
-from PySide6.QtWidgets import QApplication, QDialog, QVBoxLayout, QMainWindow, QFileDialog, QMessageBox, QComboBox
+import json
+from PySide6.QtCore import Slot, QSize, Qt, QTimer, QPointF
+from PySide6.QtGui import QPalette, QIcon, QPixmap, QPainter, QColor, QBrush, QMouseEvent, QLinearGradient, QImage
+from PySide6.QtWidgets import QApplication, QDialog, QVBoxLayout, QMainWindow, QFileDialog, QMessageBox, QComboBox, \
+    QColorDialog, QWidget
 from matplotlib import colors
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
 
 from Mandelbrot_Julia import mandelbrot_julia_set
 from ui_form_MandelbrotJulia import Ui_MainWindowMandelbrotJulia
+from ui_form_setGradient import Ui_setGradient
 from ui_form_DialogSetLim import Ui_SetLimits
 from ui_form_setShading import Ui_setShading
 from ui_form_DialogSave import Ui_Save
@@ -75,6 +78,153 @@ class MyWindowMandelbrotJulia(QMainWindow):
         self.ui.setupUi(self)
 
 
+class DialogSetGradient(BaseDialog):
+    def __init__(self, parent=None):
+        super().__init__(Ui_setGradient, parent)
+        self.GradWidget = Gradient()
+        self.ui.gridLayout.removeWidget(self.ui.GradWidget)
+        self.ui.gridLayout.addWidget(self.GradWidget, 1, 0, 1, 3)
+
+
+class Gradient(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        # [(position [0-1], QColor)]
+        self.points = [(0.0, QColor(255, 0, 0)), (1.0, QColor(0, 0, 255))]  # red and blue
+        self.loaded_colours = None
+        self.dragging_index = None
+        self.radius = 5
+
+    def paintEvent(self, event):  # parent method, run by self.update()
+        painter = QPainter(self)
+        gradient = self.make_gradient()
+        painter.fillRect(self.rect(), QBrush(gradient))
+
+        # draw control points
+        if self.points:
+            for i, (pos, _) in enumerate(self.points):
+                x = int(pos * self.width())
+                y = self.height() // 2
+
+                painter.setPen(Qt.gray)
+                painter.drawLine(x, 0, x, self.height())
+
+                painter.setBrush(Qt.white)
+                painter.setPen(Qt.black)
+                painter.drawEllipse(QPointF(x, y), self.radius, self.radius)
+
+    def mousePressEvent(self, event: QMouseEvent):
+        x = event.position().x()
+
+        # right click - remove the point
+        if event.button() == Qt.RightButton:
+            for i, (pos, _) in enumerate(self.points):
+                px = pos * self.width()
+                if abs(px - x) <= self.radius:
+                    if len(self.points) > 2:
+                        del self.points[i]
+                        self.update()
+                    return
+
+        # check if clicked on existing point
+        for i, (pos, _) in enumerate(self.points):
+            px = pos * self.width()
+            if abs(px - x) <= self.radius:
+                self.dragging_index = i
+                return
+
+        # otherwise, add a new point
+        pos = x / self.width()
+        colour = QColorDialog.getColor()
+        self.activateWindow()
+        self.raise_()
+        if colour.isValid():
+            self.points.append((pos, colour))
+            self.points.sort()
+            self.update()
+
+    def mouseMoveEvent(self, event: QMouseEvent):
+        if self.dragging_index is not None:
+            x = event.position().x()
+            pos = max(0.0, min(1.0, x / self.width()))  # check for out-of-bounds
+            colour = self.points[self.dragging_index][1]
+            self.points[self.dragging_index] = (pos, colour)
+            self.points.sort()
+            self.update()
+
+    def mouseReleaseEvent(self, event: QMouseEvent):
+        self.dragging_index = None
+
+    def mouseDoubleClickEvent(self, event: QMouseEvent):
+        # on double click: change colour if clicked on a point
+        x = event.position().x()
+        for i, (pos, _) in enumerate(self.points):
+            px = pos * self.width()
+            if abs(px - x) <= self.radius:
+                new_colour = QColorDialog.getColor()
+                if new_colour.isValid():
+                    self.points[i] = (pos, new_colour)
+                    self.update()
+                return
+
+    def make_gradient(self):
+        gradient = QLinearGradient(0, 0, self.width(), 0)
+        if self.points:
+            for pos, colour in sorted(self.points):
+                gradient.setColorAt(pos, colour)
+        elif self.loaded_colours:
+            num_colours = len(self.loaded_colours)
+            for i, colour in enumerate(self.loaded_colours):
+                pos = i / (num_colours - 1)
+                gradient.setColorAt(pos, QColor(*colour))
+        return gradient
+
+    def make_colourmap(self, steps=256):
+        gradient = self.make_gradient()
+        image = QImage(self.width(), self.height(), QImage.Format_RGB32)
+        painter = QPainter(image)  # draw an image and then scan its colours
+        painter.fillRect(image.rect(), gradient)
+        painter.end()
+
+        colours = []
+        for i in range(steps):
+            x = int(i / (steps - 1) * (self.width() - 1))
+            colour = image.pixelColor(x, self.height() // 2)
+            colours.append((colour.red() / 255.0, colour.green() / 255.0, colour.blue() / 255.0, 1.0))  # RGBA
+
+        return colors.ListedColormap(colours)
+
+    def save_to_file(self, path, steps=256):
+        colourmap = self.make_colourmap(steps)
+
+        colours_data = []
+        for color in colourmap.colors:
+            colours_data.append({'r': color[0], 'g': color[1], 'b': color[2]})
+
+        with open(path, 'w') as f:
+            json.dump(colours_data, fp=f, indent=2)
+
+    def load_from_file(self, path):
+        try:
+            with open(path, 'r') as f:
+                colours_data = json.load(f)
+
+            colours = []
+            for colour in colours_data:
+                r = colour['r']
+                g = colour['g']
+                b = colour['b']
+                colours.append((round(r*255), round(g*255), round(b*255)))
+
+            self.points = []
+            self.loaded_colours = colours
+            self.update()
+
+        except Exception as e:
+            print('Cannot load the colourmap:', e)
+
+
 class MJSet(MyWindowMandelbrotJulia):
     def __init__(self, application: QApplication = None, parent=None):
         super().__init__(parent)
@@ -100,6 +250,7 @@ class MJSet(MyWindowMandelbrotJulia):
         self.vert_exag = None
         self.application = application
         self.toolbar = None
+        self.gradient_dialog = None
 
         self.ui.groupbox_C.setVisible(False)
 
@@ -118,9 +269,9 @@ class MJSet(MyWindowMandelbrotJulia):
             self.ax.tick_params(axis='both', colors='w')
         self.application.styleHints().colorSchemeChanged.connect(
             lambda: QTimer.singleShot(100, self.colour_scheme_changed))
-        self.ax.imshow([[0]], origin="lower", cmap=self.colourmap)  # Empty initial image
+        self.ax.imshow([[0]], origin='lower', cmap=self.colourmap)  # Empty initial image
         self.ax.set(xlim=(self.xmin_0, self.xmax_0), ylim=(self.ymin_0, self.ymax_0))
-        self.ax.callbacks.connect("ylim_changed", self.ax_update)
+        self.ax.callbacks.connect('ylim_changed', self.ax_update)
         self.ax.set(xlim=(self.xmin_0, self.xmax_0), ylim=(self.ymin_0, self.ymax_0))
         im = self.ax.images[0]
         im.set(clim=(im.get_array().min(), im.get_array().max()))
@@ -156,10 +307,12 @@ class MJSet(MyWindowMandelbrotJulia):
             f'C = {self.x_c:.4f} {self.y_c:+.4f}\U0001D456 = {rho:.4f}\U000022C5exp({phi:.4f}\U0001D456)')
 
         for i, cmap in enumerate(plt.colormaps()):
-            self.ui.comboBox_Colourmap.setIconSize(QPixmap(f'colour_pic/{cmap}.png').scaled(100, 20).size())
+            if i == 0:
+                self.ui.comboBox_Colourmap.setIconSize(QPixmap(f'colour_pic/{cmap}.png').scaled(100, 20).size())
             pixmap = QPixmap(f'colour_pic/{cmap}.png').scaled(100, 20)
             icon = QIcon(pixmap)
             self.ui.comboBox_Colourmap.addItem(icon, cmap)
+        self.ui.comboBox_Colourmap.addItem('Set your own colourmap...')
         self.ui.comboBox_Colourmap.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLengthWithIcon)
         self.ui.comboBox_Colourmap.setMinimumContentsLength(3)
         self.ui.comboBox_Colourmap.setCurrentText(self.colourmap)
@@ -348,13 +501,46 @@ class MJSet(MyWindowMandelbrotJulia):
 
     @Slot()
     def colourmap_update(self):
-        self.colourmap = self.ui.comboBox_Colourmap.currentText()
+        if self.ui.comboBox_Colourmap.currentIndex() == self.ui.comboBox_Colourmap.count() - 1:
+            self.gradient_dialog = DialogSetGradient()
+            self.gradient_dialog.ui.pushButton_Apply.clicked.connect(self.create_and_set_colourmap)
+            self.gradient_dialog.ui.pushButton_Save.clicked.connect(self.save_colourmap)
+            self.gradient_dialog.ui.pushButton_Load.clicked.connect(self.load_colourmap)
+            self.gradient_dialog.show()
+        else:
+            self.colourmap = self.ui.comboBox_Colourmap.currentText()
+            if not self.shading:
+                im = self.ax.images[0]
+                im.set(cmap=self.colourmap)
+                self.fig.canvas.draw_idle()
+            else:
+                self.ax_update()
+
+    def create_and_set_colourmap(self):
+        self.colourmap = self.gradient_dialog.GradWidget.make_colourmap()
         if not self.shading:
             im = self.ax.images[0]
             im.set(cmap=self.colourmap)
             self.fig.canvas.draw_idle()
         else:
             self.ax_update()
+
+    def save_colourmap(self):
+        fname = QFileDialog.getSaveFileName(self, caption='Choose a filename to save to',
+                                            dir='$HOME/Desktop/Colourmap.json',
+                                            filter='json(*.json)')[0]
+        self.gradient_dialog.activateWindow()
+        self.gradient_dialog.raise_()
+
+        if not fname:
+            return
+
+        self.gradient_dialog.GradWidget.save_to_file(fname)
+
+    def load_colourmap(self):
+        fname = QFileDialog.getOpenFileName(self, caption='Choose a filename to load from',
+                                            filter='json(*.json)')[0]
+        self.colourmap = self.gradient_dialog.GradWidget.load_from_file(fname)
 
     def colour_scheme_changed(self):
         self.fig.patch.set_facecolor(self.ui.centralwidget.palette().color(QPalette.Window).name())
@@ -515,11 +701,11 @@ class MJSet(MyWindowMandelbrotJulia):
         self.save_image_dialog.exec()
 
     def save_dial(self):
-        filter_save = ("Portable Network Graphics (*.png);; Joint Photographic Expects Group (*jpeg *.jpg);; "
-                       "Tagged Image File Format (*.tiff);; Portable Document Format (*.pdf);; "
-                       "Encapsulated PostScript (*.eps)")
-        fname = QFileDialog.getSaveFileName(self, caption="Choose a filename to save to",
-                                            dir="$HOME/Desktop/Image.png",
+        filter_save = ('Portable Network Graphics (*.png);; Joint Photographic Expects Group (*jpeg *.jpg);; '
+                       'Tagged Image File Format (*.tiff);; Portable Document Format (*.pdf);; '
+                       'Encapsulated PostScript (*.eps)')
+        fname = QFileDialog.getSaveFileName(self, caption='Choose a filename to save to',
+                                            dir='$HOME/Desktop/Image.png',
                                             filter=filter_save)[0]
         if not fname:
             return
@@ -560,7 +746,7 @@ class MJSet(MyWindowMandelbrotJulia):
                 data = light.shade(z.T, cmap=plt.get_cmap(self.colourmap), vert_exag=self.vert_exag,
                                    norm=colors.PowerNorm(0.3), blend_mode='hsv')
                 plt.imsave(filename, data, dpi=dpi, origin='lower')
-        QMessageBox.information(self, "Save File", f'Image is saved to {filename}')
+        QMessageBox.information(self, 'Save File', f'Image is saved to {filename}')
         self.save_image_dialog.ui.pushButton_Save.setEnabled(True)
 
     def edit_size_label(self):
@@ -583,7 +769,7 @@ class MJSet(MyWindowMandelbrotJulia):
         self.edit_size_label()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = MJSet(app)
     window.show()
