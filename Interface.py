@@ -173,10 +173,10 @@ class Gradient(QWidget):
     def mouseDoubleClickEvent(self, event: QMouseEvent):
         # on double click: change colour if clicked on a point
         x = event.position().x()
-        for i, (pid, pos, _) in enumerate(self.points):
+        for i, (pid, pos, colour) in enumerate(self.points):
             px = pos * self.width()
             if abs(px - x) <= self.radius:
-                new_colour = QColorDialog.getColor()
+                new_colour = QColorDialog.getColor(initial=colour)
                 self.activateWindow()
                 self.raise_()
                 if new_colour.isValid():
@@ -271,7 +271,6 @@ class MJSet(MyWindowMandelbrotJulia):
         self.toolbar = None
         self.gradient_dialog = None
         self.user_defined_colourmap = None
-        self.colourmap_created = False
 
         self.ui.groupbox_C.setVisible(False)
 
@@ -530,8 +529,6 @@ class MJSet(MyWindowMandelbrotJulia):
             self.gradient_dialog.ui.pushButton_Load.clicked.connect(self.load_colourmap)
             self.gradient_dialog.show()
         else:
-            self.colourmap_created = False
-            self.user_defined_colourmap = None
             self.colourmap = self.ui.comboBox_Colourmap.currentText()
             if not self.shading:
                 im = self.ax.images[0]
@@ -542,7 +539,6 @@ class MJSet(MyWindowMandelbrotJulia):
 
     def create_and_set_colourmap(self):
         self.colourmap = self.gradient_dialog.GradWidget.make_colourmap()
-        self.colourmap_created = True
         self.user_defined_colourmap = self.gradient_dialog.GradWidget.points
         if not self.shading:
             im = self.ax.images[0]
