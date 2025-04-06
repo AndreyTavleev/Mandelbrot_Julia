@@ -172,9 +172,15 @@ The application offers customisable colour schemes
 and shading effects to enhance the visualisation of 
 the Mandelbrot and Julia sets:
 
-* **Colourmaps**: Choose from a wide range of matplotlib 
-colour palettes via the dropdown menu. Each option 
-displays a preview of the colour gradient.
+* **Colourmaps**: Choose from a wide range of [matplotlib 
+colour palettes](https://matplotlib.org/stable/users/explain/colors/colormaps.html) 
+via the dropdown menu. Each option displays a preview 
+of the colour gradient.
+* **User-defined colourmaps**: By selecting the
+`Set your own colourmap...` option from the dropdown menu,
+you can create your own colourmap by placing colour points
+along the gradient. You can also save the created colourmap
+to a file and load previously saved colourmaps to edit or use them.
 * **Shading**: Click `Set shading` to apply hillshading 
 effects. In the configuration dialogue adjust:
   * The light source’s azimuth and altitude. Angles are 
