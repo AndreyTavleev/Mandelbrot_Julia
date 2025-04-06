@@ -92,7 +92,6 @@ class Gradient(QWidget):
 
         # [(position [0-1], QColor)]
         self.points = [(0.0, QColor(255, 0, 0)), (1.0, QColor(0, 0, 255))]  # red and blue
-        self.loaded_colours = None
         self.dragging_index = None
         self.radius = 5
 
@@ -173,11 +172,6 @@ class Gradient(QWidget):
         if self.points:
             for pos, colour in sorted(self.points):
                 gradient.setColorAt(pos, colour)
-        elif self.loaded_colours:
-            num_colours = len(self.loaded_colours)
-            for i, colour in enumerate(self.loaded_colours):
-                pos = i / (num_colours - 1)
-                gradient.setColorAt(pos, QColor(*colour))
         return gradient
 
     def make_colourmap(self, steps=256):
@@ -195,12 +189,11 @@ class Gradient(QWidget):
 
         return colors.ListedColormap(colours)
 
-    def save_to_file(self, path, steps=256):
-        colourmap = self.make_colourmap(steps)
-
+    def save_to_file(self, path):
         colours_data = []
-        for color in colourmap.colors:
-            colours_data.append({'r': color[0], 'g': color[1], 'b': color[2]})
+        for pos, colour in self.points:
+            colours_data.append({'position': pos, 'r': colour.red() / 255.0,
+                                 'g': colour.green() / 255.0, 'b': colour.blue() / 255.0})
 
         with open(path, 'w') as f:
             json.dump(colours_data, fp=f, indent=2)
@@ -210,15 +203,17 @@ class Gradient(QWidget):
             with open(path, 'r') as f:
                 colours_data = json.load(f)
 
-            colours = []
-            for colour in colours_data:
-                r = colour['r']
-                g = colour['g']
-                b = colour['b']
-                colours.append((round(r*255), round(g*255), round(b*255)))
+            self.points.clear()
 
-            self.points = []
-            self.loaded_colours = colours
+            for item in colours_data:
+                pos = float(item['position'])
+                r = round(float(item['r']) * 255)
+                g = round(float(item['g']) * 255)
+                b = round(float(item['b']) * 255)
+                colour = QColor(r, g, b)
+                self.points.append((pos, colour))
+
+            self.points.sort()
             self.update()
 
         except Exception as e:
