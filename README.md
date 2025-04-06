@@ -28,6 +28,7 @@ parameters, customise colours and save the generated images.
 * [Adjustable parameters](#adjustable-parameters)
 * [Colours and Shading](#colours-and-shading)
 * [Saving](#saving)
+* [Gallery](#Gallery)
 
 ## Installation
 
@@ -218,8 +219,7 @@ when adjusting width or height.
 The image renders at the specified resolution, preserving 
 shading and colourmap preferences.
 
----
-
+## Gallery
 Overall, have fun!
 <details>
  <summary><i>Some screenshots:</i></summary>
