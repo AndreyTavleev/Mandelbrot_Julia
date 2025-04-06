@@ -84,6 +84,7 @@ class DialogSetGradient(BaseDialog):
         self.GradWidget = Gradient()
         self.ui.gridLayout.removeWidget(self.ui.GradWidget)
         self.ui.gridLayout.addWidget(self.GradWidget, 1, 0, 1, 4)
+        self.ui.pushButton_Apply.setDefault(True)
 
 
 class Gradient(QWidget):
@@ -91,7 +92,7 @@ class Gradient(QWidget):
         super().__init__(parent)
 
         # [(position [0-1], QColor)]
-        self.points = [(0.0, QColor(255, 0, 0)), (1.0, QColor(0, 0, 255))]  # red and blue
+        self.points = [(1, 0.0, QColor(255, 0, 0)), (2, 1.0, QColor(0, 0, 255))]  # red and blue
         self.dragging_index = None
         self.radius = 5
 
@@ -101,36 +102,35 @@ class Gradient(QWidget):
         painter.fillRect(self.rect(), QBrush(gradient))
 
         # draw control points
-        if self.points:
-            for i, (pos, _) in enumerate(self.points):
-                x = int(pos * self.width())
-                y = self.height() // 2
+        for i, (_, pos, _) in enumerate(self.points):
+            x = int(pos * self.width())
+            y = self.height() // 2
 
-                painter.setPen(Qt.gray)
-                painter.drawLine(x, 0, x, self.height())
+            painter.setPen(Qt.gray)
+            painter.drawLine(x, 0, x, self.height())
 
-                painter.setBrush(Qt.white)
-                painter.setPen(Qt.black)
-                painter.drawEllipse(QPointF(x, y), self.radius, self.radius)
+            painter.setBrush(Qt.white)
+            painter.setPen(Qt.black)
+            painter.drawEllipse(QPointF(x, y), self.radius, self.radius)
 
     def mousePressEvent(self, event: QMouseEvent):
         x = event.position().x()
 
         # right click - remove the point
         if event.button() == Qt.RightButton:
-            for i, (pos, _) in enumerate(self.points):
+            for i, (_, pos, _) in enumerate(self.points):
                 px = pos * self.width()
                 if abs(px - x) <= self.radius:
-                    if len(self.points) > 2:
+                    if len(self.points) > 2:  # min 2 points
                         del self.points[i]
                         self.update()
                     return
 
         # check if clicked on existing point
-        for i, (pos, _) in enumerate(self.points):
+        for pid, pos, _ in self.points:
             px = pos * self.width()
             if abs(px - x) <= self.radius:
-                self.dragging_index = i
+                self.dragging_index = pid
                 return
 
         # otherwise, add a new point
@@ -139,17 +139,29 @@ class Gradient(QWidget):
         self.activateWindow()
         self.raise_()
         if colour.isValid():
-            self.points.append((pos, colour))
-            self.points.sort()
+            pid = self.generate_id()
+            self.points.append((pid, pos, colour))
+            self.points.sort(key=lambda t: t[1])
             self.update()
+
+    def generate_id(self):
+        if not self.points:
+            return 1
+        else:
+            return max(p[0] for p in self.points) + 1
 
     def mouseMoveEvent(self, event: QMouseEvent):
         if self.dragging_index is not None:
             x = event.position().x()
-            pos = max(0.0, min(1.0, x / self.width()))  # check for out-of-bounds
-            colour = self.points[self.dragging_index][1]
-            self.points[self.dragging_index] = (pos, colour)
-            self.points.sort()
+            new_pos = max(0.0, min(1.0, x / self.width()))  # check for out-of-bounds
+            new_points = []
+            for pid, pos, colour in self.points:
+                if pid == self.dragging_index:
+                    new_points.append((pid, new_pos, colour))
+                else:
+                    new_points.append((pid, pos, colour))
+
+            self.points = sorted(new_points, key=lambda t: t[1])
             self.update()
 
     def mouseReleaseEvent(self, event: QMouseEvent):
@@ -158,26 +170,28 @@ class Gradient(QWidget):
     def mouseDoubleClickEvent(self, event: QMouseEvent):
         # on double click: change colour if clicked on a point
         x = event.position().x()
-        for i, (pos, _) in enumerate(self.points):
+        for i, (pid, pos, _) in enumerate(self.points):
             px = pos * self.width()
             if abs(px - x) <= self.radius:
                 new_colour = QColorDialog.getColor()
+                self.activateWindow()
+                self.raise_()
                 if new_colour.isValid():
-                    self.points[i] = (pos, new_colour)
+                    self.points[i] = (pid, pos, new_colour)
                     self.update()
                 return
 
     def make_gradient(self):
         gradient = QLinearGradient(0, 0, self.width(), 0)
-        for pos, colour in sorted(self.points):
+        for _, pos, colour in sorted(self.points):
             gradient.setColorAt(pos, colour)
         return gradient
 
     def reverse_gradient(self):
-        for i, (pos, colour) in enumerate(self.points):
+        for i, (pid, pos, colour) in enumerate(self.points):
             pos = 1 - pos
-            self.points[i] = (pos, colour)
-        self.points.sort()
+            self.points[i] = (pid, pos, colour)
+        self.points.sort(key=lambda t: t[1])
         self.update()
 
     def make_colourmap(self, steps=256):
@@ -197,7 +211,7 @@ class Gradient(QWidget):
 
     def save_to_file(self, path):
         colours_data = []
-        for pos, colour in self.points:
+        for _, pos, colour in self.points:
             colours_data.append({'position': pos, 'r': colour.red() / 255.0,
                                  'g': colour.green() / 255.0, 'b': colour.blue() / 255.0})
 
@@ -217,9 +231,10 @@ class Gradient(QWidget):
                 g = round(float(item['g']) * 255)
                 b = round(float(item['b']) * 255)
                 colour = QColor(r, g, b)
-                self.points.append((pos, colour))
+                pid = self.generate_id()
+                self.points.append((pid, pos, colour))
 
-            self.points.sort()
+            self.points.sort(key=lambda t: t[1])
             self.update()
 
         except Exception as e:
