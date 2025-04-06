@@ -83,7 +83,7 @@ class DialogSetGradient(BaseDialog):
         super().__init__(Ui_setGradient, parent)
         self.GradWidget = Gradient()
         self.ui.gridLayout.removeWidget(self.ui.GradWidget)
-        self.ui.gridLayout.addWidget(self.GradWidget, 1, 0, 1, 3)
+        self.ui.gridLayout.addWidget(self.GradWidget, 1, 0, 1, 4)
 
 
 class Gradient(QWidget):
@@ -169,10 +169,16 @@ class Gradient(QWidget):
 
     def make_gradient(self):
         gradient = QLinearGradient(0, 0, self.width(), 0)
-        if self.points:
-            for pos, colour in sorted(self.points):
-                gradient.setColorAt(pos, colour)
+        for pos, colour in sorted(self.points):
+            gradient.setColorAt(pos, colour)
         return gradient
+
+    def reverse_gradient(self):
+        for i, (pos, colour) in enumerate(self.points):
+            pos = 1 - pos
+            self.points[i] = (pos, colour)
+        self.points.sort()
+        self.update()
 
     def make_colourmap(self, steps=256):
         gradient = self.make_gradient()
@@ -499,6 +505,7 @@ class MJSet(MyWindowMandelbrotJulia):
         if self.ui.comboBox_Colourmap.currentIndex() == self.ui.comboBox_Colourmap.count() - 1:
             self.gradient_dialog = DialogSetGradient()
             self.gradient_dialog.ui.pushButton_Apply.clicked.connect(self.create_and_set_colourmap)
+            self.gradient_dialog.ui.pushButton_Reverse.clicked.connect(self.gradient_dialog.GradWidget.reverse_gradient)
             self.gradient_dialog.ui.pushButton_Save.clicked.connect(self.save_colourmap)
             self.gradient_dialog.ui.pushButton_Load.clicked.connect(self.load_colourmap)
             self.gradient_dialog.show()
