@@ -29,6 +29,8 @@ DEFAULT_POWER = 2
 DEFAULT_COLOURMAP = 'jet'
 DEFAULT_HEIGHT = 1000
 DEFAULT_LENGTH = 1000
+DEFAULT_REGIME = 'standard'
+DEFAULT_FREQ = 0.01
 DELTA_SLIDER_C = 5e-4  # 2 / 4000
 LIMS_MANDELBROT_DICT = {'2': (-2, 0.5, -1.25, 1.25), '3': (-1, 1, -1.25, 1.25),
                         '4': (-1.35, 1, -1.25, 1.25), '5': (-1, 1, -1, 1),
@@ -276,8 +278,11 @@ class MJSet(MyWindowMandelbrotJulia):
         self.colourmap, self.power = DEFAULT_COLOURMAP, DEFAULT_POWER
         self.slider_move, self.rebuild, self.shading = False, False, False
         self.azdeg, self.altdeg, self.vert_exag = None, None, None
+        self.regime = DEFAULT_REGIME
+        self.freq = DEFAULT_FREQ
 
         # Initialize dialogs and toolbar
+        self.main_layout = None
         self.set_lim_dialog, self.save_image_dialog = None, None
         self.set_c_dialog, self.shading_dialog = None, None
         self.gradient_dialog = None
@@ -287,7 +292,10 @@ class MJSet(MyWindowMandelbrotJulia):
     def initialize_ui_components(self):
         """Initializes UI components and configures their default values."""
         self.ui.groupbox_C.setVisible(False)
+        self.ui.lineEdit_freq.setVisible(False)
+        self.ui.label_freq.setVisible(False)
         self.ui.comboBox_Set.addItems(['mandelbrot', 'julia'])
+        self.ui.comboBox_regime.addItems(['standard', 'sin'])
         self.ui.comboBox_Power.addItems([str(i) for i in range(2, 9)])
 
         for i, cmap in enumerate(plt.colormaps()):
@@ -320,15 +328,18 @@ class MJSet(MyWindowMandelbrotJulia):
         self.fig.tight_layout()
 
         self.toolbar = NavigationToolbar(self.sc, self)
-        main_layout = QVBoxLayout()
-        main_layout.addWidget(self.sc)
-        main_layout.addWidget(self.toolbar)
-        self.ui.frame.setLayout(main_layout)
+        self.main_layout = QVBoxLayout()
+        self.main_layout.addWidget(self.sc)
+        self.main_layout.addWidget(self.toolbar)
+        self.ui.frame.setLayout(self.main_layout)
 
     def connect_signals(self):
         """Connects signals to their respective slots."""
         self.ui.comboBox_Set.activated.connect(self.mode_update)
         self.ui.comboBox_Colourmap.activated.connect(self.colourmap_update)
+        self.ui.comboBox_regime.activated.connect(self.set_regime)
+
+        self.ui.lineEdit_freq.editingFinished.connect(self.set_freq)
 
         # Coordinate sliders
         self.ui.horizontalSlider_N.valueChanged.connect(self.change_n)
@@ -356,11 +367,13 @@ class MJSet(MyWindowMandelbrotJulia):
         """Updates UI fields with the default attributes."""
         self.ui.comboBox_Set.setCurrentText(self.mode)
         self.ui.comboBox_Power.setCurrentText(str(self.power))
+        self.ui.comboBox_regime.setCurrentText('standard')
         self.ui.lineEdit_N.setText(f'{self.n}')
         self.ui.lineEdit_H.setText(f'{self.horizon:.1e}')
         self.ui.horizontalSlider_N.setValue(self.n)
-        print('second')
         self.ui.comboBox_Colourmap.setCurrentText(self.colourmap)
+        self.ui.lineEdit_freq.setText(f'{self.freq:.2f}')
+        self.ui.label_freq.setText('\U000003C9:')
 
         ini_slider_xc_val = (self.x_c_0 + 1) / DELTA_SLIDER_C
         ini_slider_yc_val = (self.y_c_0 + 1) / DELTA_SLIDER_C
@@ -397,6 +410,10 @@ class MJSet(MyWindowMandelbrotJulia):
         data = mandelbrot_julia_set(xmin, xmax, ymin, ymax, horizon=self.horizon,
                                     length=self.length, height=self.height, n=n,
                                     x_c=self.x_c, y_c=self.y_c, power=self.power, mode=self.mode)[2].T
+        if self.regime == 'standard':
+            pass
+        elif self.regime == 'sin':
+            data = (np.sin(data * self.freq))**2
         if not self.shading:
             im.set(data=data, extent=(xmin, xmax, ymin, ymax), cmap=self.colourmap)
         else:
@@ -436,6 +453,21 @@ class MJSet(MyWindowMandelbrotJulia):
             return LIMS_MANDELBROT_DICT[str(self.power)][3]
         elif self.mode == 'julia':
             return 1.3
+
+    def set_regime(self):
+        regime = self.ui.comboBox_regime.currentText()
+        self.regime = self.ui.comboBox_regime.currentText()
+        if regime == 'standard':
+            self.ui.lineEdit_freq.setVisible(False)
+            self.ui.label_freq.setVisible(False)
+        elif regime == 'sin':
+            self.ui.lineEdit_freq.setVisible(True)
+            self.ui.label_freq.setVisible(True)
+        self.ax_update()
+
+    def set_freq(self):
+        self.freq = float(self.ui.lineEdit_freq.text())
+        self.ax_update()
 
     @property
     def n(self):
@@ -763,6 +795,10 @@ class MJSet(MyWindowMandelbrotJulia):
         x, y, z = mandelbrot_julia_set(xmin, xmax, ymin, ymax, x_c=self.x_c, y_c=self.y_c,
                                        height=img_height, length=img_width,
                                        n=self.n, horizon=self.horizon, power=self.power, mode=self.mode)
+        if self.regime == 'standard':
+            pass
+        elif self.regime == 'sin':
+            z = (np.sin(z * self.freq))**2
         if self.save_image_dialog.ui.checkBox_withAxes.isChecked():
             fig, ax = plt.subplots(figsize=(length, height), dpi=dpi)
             if not self.shading:

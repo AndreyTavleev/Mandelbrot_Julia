@@ -18,7 +18,7 @@ parameters, customise colours and save the generated images.
 ![](im_1.png)
 ![](im_2.png)
 
-## Contents 
+## Contents
 
 * [Installation](#installation)
 * [Theory of Mandelbrot and Julia fractals](#theory-of-mandelbrot-and-julia-fractals)
@@ -27,8 +27,11 @@ parameters, customise colours and save the generated images.
   * [Manual Limit Configuration](#manual-limit-configuration)
 * [Adjustable parameters](#adjustable-parameters)
 * [Colours and Shading](#colours-and-shading)
+  * [Colourmaps](#colourmaps-)
+  * [Colouring regimes](#colouring-regimes-)
+  * [Shading](#shading)
 * [Saving](#saving)
-* [Gallery](#Gallery)
+* [Gallery](#gallery)
 
 ## Installation
 
@@ -182,7 +185,8 @@ The application offers customisable colour schemes
 and shading effects to enhance the visualisation of 
 the Mandelbrot and Julia sets:
 
-* **Colourmaps**: Choose from a wide range of [matplotlib 
+### Colourmaps 
+Choose from a wide range of [matplotlib 
 colour palettes](https://matplotlib.org/stable/users/explain/colors/colormaps.html) 
 via the dropdown menu. Each option displays a preview 
 of the colour gradient.
@@ -191,7 +195,20 @@ of the colour gradient.
 you can create your own colourmap by placing colour points
 along the gradient. You can also save the created colourmap
 to a file and load previously saved colourmaps to edit or use them.
-* **Shading**: Click `Set shading` to apply hillshading 
+
+### Colouring regimes 
+There are two colouring techniques available in the 
+`Regime` dropdown menu:
+* `Standard`: Applies linear colour scaling, mapping the 
+lowest data value to 0 and the highest to 1.
+* `Sin`: Transforms the data using the formula 
+$\sin^2(\omega \cdot \text{data})$,
+where the frequency $\omega$ (default: $0.01$) can be set 
+by the user. This allows for cyclic colour variation.
+
+### Shading
+
+Click `Set shading` to apply hillshading 
 effects. In the configuration dialogue adjust:
   * The light source’s azimuth and altitude. Angles are 
   in degrees, with the azimuth measured clockwise from 
@@ -202,7 +219,6 @@ effects. In the configuration dialogue adjust:
 
 For details see the [matplotlib documentation](https://matplotlib.org/stable/api/_as_gen/matplotlib.colors.LightSource.html#) 
 and [tutorials](https://matplotlib.org/stable/gallery/showcase/mandelbrot.html).
-
 To revert to the flat colourmap display, click 
 the `Remove shading` button.
 
@@ -223,14 +239,19 @@ shading and colourmap preferences.
 Overall, have fun!
 <details>
  <summary><i>Some screenshots:</i></summary>
- 
+
  ![](im_3.png)
  ![](im_4.png)
  ![](im_5.png)
+`Sin` colourisation results in beautifully cycling colours. 
+ The $\omega$ parameter controls how frequently the 
+ colours cycle:
  ![](im_6.png)
  ![](im_7.png)
+Shading option (`vert_exag=3.0`) with
+ [custom colourmap](Colourmap.json):
  ![](im_8.png)
  ![](im_9.png)
+`Sin` colourisation and shading (`vert_exag=100.0`):
  ![](im_10.png)
- ![](im_11.png)
 </details>

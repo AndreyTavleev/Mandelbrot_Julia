@@ -13,7 +13,7 @@ def mandelbrot_julia(x, y, n, x_c, y_c, log_horizon, horizon, power=2, mode='man
     for i in range(n):
         if real * real + imag * imag > horizon:
             # return i
-            return i + 1 - (math.log(math.log(real * real + imag * imag)) - log_horizon) / math.log(float(power))
+            return i + 2 - (math.log(math.log(real * real + imag * imag)) - log_horizon) / math.log(float(power))
         real0 = real
         if power == 2:
             real = real * real - imag * imag + x_c
