@@ -11,7 +11,7 @@
 from PySide6.QtCore import QCoreApplication, QMetaObject, QSize, Qt
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (QGridLayout, QLabel, QLineEdit, QPushButton,
-                               QSizePolicy, QSpacerItem, QVBoxLayout)
+                               QSizePolicy, QSpacerItem, QVBoxLayout, QWidget)
 
 
 class Ui_SetLimits(object):
@@ -128,6 +128,14 @@ class Ui_SetLimits(object):
         self.verticalLayout.addWidget(self.pushButton_SetC, 0, Qt.AlignmentFlag.AlignHCenter)
 
         self.gridLayout.addLayout(self.verticalLayout, 0, 0, 1, 1)
+
+        QWidget.setTabOrder(self.lineEdit_X, self.lineEdit_Y)
+        QWidget.setTabOrder(self.lineEdit_Y, self.pushButton_SetLim)
+        QWidget.setTabOrder(self.pushButton_SetLim, self.lineEdit_XC)
+        QWidget.setTabOrder(self.lineEdit_XC, self.lineEdit_YC)
+        QWidget.setTabOrder(self.lineEdit_YC, self.lineEdit_deltaX)
+        QWidget.setTabOrder(self.lineEdit_deltaX, self.lineEdit_deltaY)
+        QWidget.setTabOrder(self.lineEdit_deltaY, self.pushButton_SetC)
 
         self.retranslateUi(SetLimits)
 

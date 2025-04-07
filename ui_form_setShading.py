@@ -9,7 +9,8 @@
 ################################################################################
 
 from PySide6.QtCore import QCoreApplication, QMetaObject, QSize, Qt
-from PySide6.QtWidgets import QGridLayout, QLabel, QLineEdit, QPushButton, QSizePolicy, QSpacerItem
+from PySide6.QtWidgets import (QGridLayout, QLabel, QLineEdit, QPushButton,
+                               QSizePolicy, QSpacerItem, QWidget)
 
 
 class Ui_setShading(object):
@@ -75,6 +76,10 @@ class Ui_setShading(object):
         self.gridLayout.addItem(self.verticalSpacer, 3, 0, 1, 2)
 
         self.gridLayout_2.addLayout(self.gridLayout, 0, 0, 1, 1)
+
+        QWidget.setTabOrder(self.lineEdit_azimuth, self.lineEdit_altitude)
+        QWidget.setTabOrder(self.lineEdit_altitude, self.lineEdit_vert_exag)
+        QWidget.setTabOrder(self.lineEdit_vert_exag, self.pushButton_setShading)
 
         self.retranslateUi(setShading)
 

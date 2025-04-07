@@ -9,7 +9,8 @@
 ################################################################################
 
 from PySide6.QtCore import QCoreApplication, QMetaObject, QSize, Qt
-from PySide6.QtWidgets import QGridLayout, QLabel, QLineEdit, QPushButton, QSizePolicy, QSpacerItem
+from PySide6.QtWidgets import (QGridLayout, QLabel, QLineEdit, QPushButton,
+                               QSizePolicy, QSpacerItem, QWidget)
 
 
 class Ui_setC(object):
@@ -116,6 +117,12 @@ class Ui_setC(object):
         self.gridLayout_setC.addWidget(self.label, 0, 0, 1, 4, Qt.AlignmentFlag.AlignHCenter)
 
         self.gridLayout.addLayout(self.gridLayout_setC, 0, 0, 1, 1)
+
+        QWidget.setTabOrder(self.lineEdit_ReC, self.lineEdit_ImC)
+        QWidget.setTabOrder(self.lineEdit_ImC, self.pushButto_ReImC)
+        QWidget.setTabOrder(self.pushButto_ReImC, self.lineEdit_rhoC)
+        QWidget.setTabOrder(self.lineEdit_rhoC, self.lineEdit_phiC)
+        QWidget.setTabOrder(self.lineEdit_phiC, self.pushButton_RhoPhiC)
 
         self.retranslateUi(setC)
 

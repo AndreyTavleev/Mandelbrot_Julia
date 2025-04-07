@@ -60,6 +60,10 @@ class Ui_setGradient(object):
 
         self.gridLayout_2.addLayout(self.gridLayout, 0, 0, 1, 1)
 
+        QWidget.setTabOrder(self.pushButton_Apply, self.pushButton_Reverse)
+        QWidget.setTabOrder(self.pushButton_Reverse, self.pushButton_Load)
+        QWidget.setTabOrder(self.pushButton_Load, self.pushButton_Save)
+
         self.retranslateUi(setGradient)
 
         QMetaObject.connectSlotsByName(setGradient)

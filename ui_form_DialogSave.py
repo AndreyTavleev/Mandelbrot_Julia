@@ -9,7 +9,7 @@
 ################################################################################
 
 from PySide6.QtCore import QCoreApplication, QMetaObject, QSize, Qt
-from PySide6.QtWidgets import QCheckBox, QGridLayout, QLabel, QLineEdit, QPushButton
+from PySide6.QtWidgets import QCheckBox, QGridLayout, QLabel, QLineEdit, QPushButton, QWidget
 
 
 class Ui_Save(object):
@@ -76,6 +76,12 @@ class Ui_Save(object):
         self.gridLayout.addWidget(self.checkBox_lockAR, 3, 1, 1, 1)
 
         self.gridLayout_2.addLayout(self.gridLayout, 0, 0, 1, 1)
+
+        QWidget.setTabOrder(self.lineEdit_L, self.lineEdit_H)
+        QWidget.setTabOrder(self.lineEdit_H, self.lineEdit_DPI)
+        QWidget.setTabOrder(self.lineEdit_DPI, self.checkBox_withAxes)
+        QWidget.setTabOrder(self.checkBox_withAxes, self.checkBox_lockAR)
+        QWidget.setTabOrder(self.checkBox_lockAR, self.pushButton_Save)
 
         self.retranslateUi(Save)
 

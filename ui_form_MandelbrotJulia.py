@@ -20,8 +20,8 @@ class Ui_MainWindowMandelbrotJulia(object):
     def setupUi(self, MainWindowMandelbrotJulia):
         if not MainWindowMandelbrotJulia.objectName():
             MainWindowMandelbrotJulia.setObjectName(u"MainWindowMandelbrotJulia")
-        MainWindowMandelbrotJulia.resize(850, 763)
-        MainWindowMandelbrotJulia.setMinimumSize(QSize(850, 763))
+        MainWindowMandelbrotJulia.resize(854, 763)
+        MainWindowMandelbrotJulia.setMinimumSize(QSize(854, 763))
         MainWindowMandelbrotJulia.setMaximumSize(QSize(16777215, 16777215))
         self.centralwidget = QWidget(MainWindowMandelbrotJulia)
         self.centralwidget.setObjectName(u"centralwidget")
@@ -335,6 +335,25 @@ class Ui_MainWindowMandelbrotJulia(object):
         self.gridLayout.addLayout(self.horizontalLayout_Main, 0, 0, 1, 1)
 
         MainWindowMandelbrotJulia.setCentralWidget(self.centralwidget)
+        QWidget.setTabOrder(self.lineEdit_H, self.lineEdit_N)
+        QWidget.setTabOrder(self.lineEdit_N, self.comboBox_Power)
+        QWidget.setTabOrder(self.comboBox_Power, self.pushButton_Rebuild)
+        QWidget.setTabOrder(self.pushButton_Rebuild, self.pushButton_Reset)
+        QWidget.setTabOrder(self.pushButton_Reset, self.comboBox_Colourmap)
+        QWidget.setTabOrder(self.comboBox_Colourmap, self.pushButton_setShading)
+        QWidget.setTabOrder(self.pushButton_setShading, self.pushButton_removeShading)
+        QWidget.setTabOrder(self.pushButton_removeShading, self.pushButton_Save)
+        QWidget.setTabOrder(self.pushButton_Save, self.pushButton_zoom_plus)
+        QWidget.setTabOrder(self.pushButton_zoom_plus, self.pushButton_zoom_minus)
+        QWidget.setTabOrder(self.pushButton_zoom_minus, self.pushButton_NewLims)
+        QWidget.setTabOrder(self.pushButton_NewLims, self.pushButton_ResetLims)
+        QWidget.setTabOrder(self.pushButton_ResetLims, self.horizontalSlider_N)
+        QWidget.setTabOrder(self.horizontalSlider_N, self.pushButton_ResetN)
+        QWidget.setTabOrder(self.pushButton_ResetN, self.horizontalSlider_XC)
+        QWidget.setTabOrder(self.horizontalSlider_XC, self.horizontalSlider_YC)
+        QWidget.setTabOrder(self.horizontalSlider_YC, self.pushButton_setC)
+        QWidget.setTabOrder(self.pushButton_setC, self.pushButton_ResetC)
+        QWidget.setTabOrder(self.pushButton_ResetC, self.comboBox_Set)
 
         self.retranslateUi(MainWindowMandelbrotJulia)
 
