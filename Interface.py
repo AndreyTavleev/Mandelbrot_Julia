@@ -24,18 +24,33 @@ matplotlib.use('Qt5Agg')
 
 # Constants for default values
 DEFAULT_MODE = 'mandelbrot'
-DEFAULT_HORIZON = 2e50
+DEFAULT_HORIZON_MANDELBROT = 2e50
+DEFAULT_HORIZON_JULIA = 4
 DEFAULT_POWER = 2
 DEFAULT_COLOURMAP = 'jet'
 DEFAULT_HEIGHT = 1000
 DEFAULT_LENGTH = 1000
 DEFAULT_REGIME = 'standard'
 DEFAULT_FREQ = 0.01
-DELTA_SLIDER_C = 5e-4  # 2 / 4000
+DEFAULT_C_VIEW = 'xy'
+DEFAULT_DELTA_SLIDER_C = 5e-4  # 2 / 4000 = (1 - (-1)) / 4000
 LIMS_MANDELBROT_DICT = {'2': (-2, 0.5, -1.25, 1.25), '3': (-1, 1, -1.25, 1.25),
                         '4': (-1.35, 1, -1.25, 1.25), '5': (-1, 1, -1, 1),
                         '6': (-1.3, 1.2, -1.2, 1.2), '7': (-1.25, 1.25, -1.3, 1.3),
                         '8': (-1.25, 1.25, -1.3, 1.3)}
+
+
+def cartesian_coordinates(rho_c, phi_c):
+    x_c = rho_c * math.cos(phi_c)
+    y_c = rho_c * math.sin(phi_c)
+    return x_c, y_c
+
+
+def polar_coordinates(x_c, y_c):
+    rho = math.sqrt(x_c ** 2 + y_c ** 2)
+    phi = math.atan2(y_c, x_c)
+    phi = phi + 2 * math.pi * (phi < 0)  # Ensure the angle is in [0, 2pi]
+    return rho, phi
 
 
 class MplCanvas(FigureCanvasQTAgg):
@@ -271,15 +286,21 @@ class MJSet(MyWindowMandelbrotJulia):
         """Sets default values for instance variables."""
         self.application = application
         self.mode = DEFAULT_MODE
-        self.horizon = DEFAULT_HORIZON
+        self.horizon = DEFAULT_HORIZON_MANDELBROT
         self.x_c_0, self.y_c_0 = -0.8000, -0.1560
+        self.rho_c_0, self.phi_c_0 = polar_coordinates(self.x_c_0, self.y_c_0)
         self.x_c, self.y_c = self.x_c_0, self.y_c_0
+        self.rho_c, self.phi_c = self.rho_c_0, self.phi_c_0
         self.height, self.length = DEFAULT_HEIGHT, DEFAULT_LENGTH
         self.colourmap, self.power = DEFAULT_COLOURMAP, DEFAULT_POWER
         self.slider_move, self.rebuild, self.shading = False, False, False
         self.azdeg, self.altdeg, self.vert_exag = None, None, None
         self.regime = DEFAULT_REGIME
         self.freq = DEFAULT_FREQ
+        self.no_ax_update = False
+        self.c_view = DEFAULT_C_VIEW
+        self.delta_slider_xc = DEFAULT_DELTA_SLIDER_C
+        self.delta_slider_yc = DEFAULT_DELTA_SLIDER_C
 
         # Initialize dialogs and toolbar
         self.main_layout = None
@@ -297,6 +318,7 @@ class MJSet(MyWindowMandelbrotJulia):
         self.ui.comboBox_Set.addItems(['mandelbrot', 'julia'])
         self.ui.comboBox_regime.addItems(['standard', 'sin'])
         self.ui.comboBox_Power.addItems([str(i) for i in range(2, 9)])
+        self.ui.comboBox_viewC.addItems(['ReC, ImC', '\U000003C1, \U000003D5'])
 
         for i, cmap in enumerate(plt.colormaps()):
             if i == 0:
@@ -338,13 +360,14 @@ class MJSet(MyWindowMandelbrotJulia):
         self.ui.comboBox_Set.activated.connect(self.mode_update)
         self.ui.comboBox_Colourmap.activated.connect(self.colourmap_update)
         self.ui.comboBox_regime.activated.connect(self.set_regime)
+        self.ui.comboBox_viewC.activated.connect(self.change_c_view)
 
         self.ui.lineEdit_freq.editingFinished.connect(self.set_freq)
 
         # Coordinate sliders
         self.ui.horizontalSlider_N.valueChanged.connect(self.change_n)
-        self.ui.horizontalSlider_XC.valueChanged.connect(lambda: self.set_xyc('x'))
-        self.ui.horizontalSlider_YC.valueChanged.connect(lambda: self.set_xyc('y'))
+        self.ui.horizontalSlider_XC.valueChanged.connect(self.set_c_from_slider)
+        self.ui.horizontalSlider_YC.valueChanged.connect(self.set_c_from_slider)
 
         # Button actions
         for button, action in [
@@ -368,6 +391,7 @@ class MJSet(MyWindowMandelbrotJulia):
         self.ui.comboBox_Set.setCurrentText(self.mode)
         self.ui.comboBox_Power.setCurrentText(str(self.power))
         self.ui.comboBox_regime.setCurrentText('standard')
+        self.ui.comboBox_viewC.setCurrentText('ReC, ImC')
         self.ui.lineEdit_N.setText(f'{self.n}')
         self.ui.lineEdit_H.setText(f'{self.horizon:.1e}')
         self.ui.horizontalSlider_N.setValue(self.n)
@@ -375,15 +399,14 @@ class MJSet(MyWindowMandelbrotJulia):
         self.ui.lineEdit_freq.setText(f'{self.freq:.2f}')
         self.ui.label_freq.setText('\U000003C9:')
 
-        ini_slider_xc_val = (self.x_c_0 + 1) / DELTA_SLIDER_C
-        ini_slider_yc_val = (self.y_c_0 + 1) / DELTA_SLIDER_C
+        ini_slider_xc_val = self.from_value_to_slider(self.x_c_0, 'xc')
+        ini_slider_yc_val = self.from_value_to_slider(self.y_c_0, 'yc')
 
         self.ui.horizontalSlider_XC.setValue(round(ini_slider_xc_val))
         self.ui.horizontalSlider_YC.setValue(round(ini_slider_yc_val))
 
-        rho, phi = self.polar_coordinates(self.x_c, self.y_c)
         self.ui.label_C.setText(
-            f'C = {self.x_c:.4f} {self.y_c:+.4f}\U0001D456 = {rho:.4f}\U000022C5exp({phi:.4f}\U0001D456)')
+            f'C = {self.x_c:.4f} {self.y_c:+.4f}\U0001D456 = {self.rho_c:.4f}\U000022C5exp({self.phi_c:.4f}\U0001D456)')
 
     def ax_update(self, event=None):
         """
@@ -486,8 +509,10 @@ class MJSet(MyWindowMandelbrotJulia):
             else:
                 res = 100
             self.ui.lineEdit_N.setText(f'{res}')
-            # self.ui.horizontalSlider_N.setValue(res)
-            # self.slider_move = False
+            self.no_ax_update = True
+            self.ui.horizontalSlider_N.setValue(res)
+            self.slider_move = False
+            self.no_ax_update = False
             return res
 
     def reset_n(self):
@@ -502,30 +527,83 @@ class MJSet(MyWindowMandelbrotJulia):
     def change_n(self):
         self.slider_move = True
         self.rebuild = False
-        self.ax_update()
+        if not self.no_ax_update:
+            self.ax_update()
         self.ui.lineEdit_N.setText(f'{self.n}')
 
-    def set_xyc(self, regime):
-        if regime == 'x':
+    def set_c_from_slider(self):
+        if self.c_view == 'xy':
             i = self.ui.horizontalSlider_XC.value()
-            self.x_c = -1 + DELTA_SLIDER_C * i
-        elif regime == 'y':
+            self.x_c = -1 + self.delta_slider_xc * i
             i = self.ui.horizontalSlider_YC.value()
-            self.y_c = -1 + DELTA_SLIDER_C * i
-        rho, phi = self.polar_coordinates(self.x_c, self.y_c)
+            self.y_c = -1 + self.delta_slider_yc * i
+            self.rho_c, self.phi_c = polar_coordinates(self.x_c, self.y_c)
+        elif self.c_view == 'rhophi':
+            i = self.ui.horizontalSlider_XC.value()
+            self.rho_c = self.delta_slider_xc * i
+            i = self.ui.horizontalSlider_YC.value()
+            self.phi_c = self.delta_slider_yc * i
+            self.x_c, self.y_c = cartesian_coordinates(self.rho_c, self.phi_c)
+        else:
+            raise ValueError('Invalid c_view')
         self.ui.label_C.setText(
-            f'C = {self.x_c:.4f} {self.y_c:+.4f}\U0001D456 = {rho:.4f}\U000022C5exp({phi:.4f}\U0001D456)')
-        self.ax_update()
+            f'C = {self.x_c:.4f} {self.y_c:+.4f}\U0001D456 = {self.rho_c:.4f}\U000022C5exp({self.phi_c:.4f}\U0001D456)')
+        if not self.no_ax_update:
+            self.ax_update()
 
-    def polar_coordinates(self, x_c, y_c):
-        rho = math.sqrt(x_c ** 2 + y_c ** 2)
-        phi = math.atan2(y_c, x_c)
-        phi = phi + 2 * math.pi * (phi < 0)  # Ensure the angle is in [0, 2pi]
-        return rho, phi
+    def change_c_view(self):
+        c_view_old = self.c_view
+        text = self.ui.comboBox_viewC.currentText()
+        if text == 'ReC, ImC':
+            self.c_view = 'xy'
+            self.delta_slider_xc = DEFAULT_DELTA_SLIDER_C
+            self.delta_slider_yc = DEFAULT_DELTA_SLIDER_C
+        elif text == '\U000003C1, \U000003D5':
+            self.c_view = 'rhophi'
+            self.delta_slider_yc = (2.0 * np.pi) / 4000.0
+            self.delta_slider_xc = math.sqrt(2) / 4000.0
+        if c_view_old == self.c_view:
+            return
+        if self.c_view == 'xy':
+            self.ui.label_XC.setText('X_c')
+            self.ui.label_YC.setText('Y_c')
+            self.x_c, self.y_c = cartesian_coordinates(self.rho_c, self.phi_c)
+            slider_xc_val = self.from_value_to_slider(self.x_c, 'xc')
+            slider_yc_val = self.from_value_to_slider(self.y_c, 'yc')
+        elif self.c_view == 'rhophi':
+            self.ui.label_XC.setText('\U000003C1')
+            self.ui.label_YC.setText('\U000003D5')
+            self.rho_c, self.phi_c = polar_coordinates(self.x_c, self.y_c)
+            slider_xc_val = self.from_value_to_slider(self.rho_c, 'rho')
+            slider_yc_val = self.from_value_to_slider(self.phi_c, 'phi')
+        else:
+            raise ValueError('Invalid c_view')
+        self.no_ax_update = True
+        self.ui.horizontalSlider_XC.setValue(round(slider_xc_val))
+        self.ui.horizontalSlider_YC.setValue(round(slider_yc_val))
+        self.no_ax_update = False
+
+    def from_value_to_slider(self, value, regime):
+        if regime == 'xc':
+            return (value + 1) / self.delta_slider_xc
+        elif regime == 'yc':
+            return (value + 1) / self.delta_slider_yc
+        elif regime == 'rho':
+            return value / self.delta_slider_xc
+        elif regime == 'phi':
+            return value / self.delta_slider_yc
+        else:
+            raise ValueError('Invalid regime')
 
     def reset_c(self):
-        ini_slider_xc_val = (self.x_c_0 + 1) / DELTA_SLIDER_C
-        ini_slider_yc_val = (self.y_c_0 + 1) / DELTA_SLIDER_C
+        if self.c_view == 'xy':
+            ini_slider_xc_val = self.from_value_to_slider(self.x_c_0, 'xc')
+            ini_slider_yc_val = self.from_value_to_slider(self.y_c_0, 'yc')
+        elif self.c_view == 'rhophi':
+            ini_slider_xc_val = self.from_value_to_slider(self.rho_c_0, 'rho')
+            ini_slider_yc_val = self.from_value_to_slider(self.phi_c_0, 'phi')
+        else:
+            raise ValueError('Invalid c_view')
         self.ui.horizontalSlider_XC.setValue(round(ini_slider_xc_val))
         self.ui.horizontalSlider_YC.setValue(round(ini_slider_yc_val))
 
@@ -534,37 +612,44 @@ class MJSet(MyWindowMandelbrotJulia):
         self.set_c_dialog.ui.label_phiC.setText('Argument, \U000003D5:')
         self.set_c_dialog.ui.label_rhoC.setText('Modulus, \U000003C1:')
         self.set_c_dialog.ui.pushButton_RhoPhiC.setText('Set \U000003C1 and \U000003D5')
-        self.set_c_dialog.ui.pushButto_ReImC.clicked.connect(lambda: self.set_c('imre'))
+        self.set_c_dialog.ui.pushButto_ReImC.clicked.connect(lambda: self.set_c('xy'))
         self.set_c_dialog.ui.pushButton_RhoPhiC.clicked.connect(lambda: self.set_c('rhophi'))
 
         self.set_c_dialog.ui.lineEdit_ReC.setText(f'{self.x_c:.4f}')
         self.set_c_dialog.ui.lineEdit_ImC.setText(f'{self.y_c:.4f}')
-        rho, phi = self.polar_coordinates(self.x_c, self.y_c)
-        self.set_c_dialog.ui.lineEdit_rhoC.setText(f'{rho:.4f}')
-        self.set_c_dialog.ui.lineEdit_phiC.setText(f'{phi:.4f}')
+        self.set_c_dialog.ui.lineEdit_rhoC.setText(f'{self.rho_c:.4f}')
+        self.set_c_dialog.ui.lineEdit_phiC.setText(f'{self.phi_c:.4f}')
 
         self.set_c_dialog.exec()
 
     def set_c(self, regime):
-        if regime == 'imre':
+        if regime == 'xy':
             self.x_c = float(self.set_c_dialog.ui.lineEdit_ReC.text())
             self.y_c = float(self.set_c_dialog.ui.lineEdit_ImC.text())
-            rho, phi = self.polar_coordinates(self.x_c, self.y_c)
+            # Clamp values to (-1, 1)
+            self.x_c = max(-1.0, min(1.0, self.x_c))
+            self.y_c = max(-1.0, min(1.0, self.y_c))
+            self.rho_c, self.phi_c = polar_coordinates(self.x_c, self.y_c)
         elif regime == 'rhophi':
-            rho = abs(float(self.set_c_dialog.ui.lineEdit_rhoC.text()))
-            phi = float(self.set_c_dialog.ui.lineEdit_phiC.text()) % (2 * math.pi)
-            self.x_c = rho * math.cos(phi)
-            self.y_c = rho * math.sin(phi)
-            phi = phi + 2 * math.pi * (phi < 0)  # Ensure the angle is in [0, 2pi]
+            self.rho_c = abs(float(self.set_c_dialog.ui.lineEdit_rhoC.text()))
+            # Clamp value to (0, sqrt(2))
+            self.rho_c = max(0.0, min(math.sqrt(2.0), self.rho_c))
+            self.phi_c = float(self.set_c_dialog.ui.lineEdit_phiC.text()) % (2 * math.pi)
+            self.x_c, self.y_c = cartesian_coordinates(self.rho_c, self.phi_c)
+            self.phi_c = self.phi_c + 2 * math.pi * (self.phi_c < 0)  # Ensure the angle is in [0, 2pi]
+        else:
+            raise ValueError('Invalid regime')
         self.ui.label_C.setText(
-            f'C = {self.x_c:.4f} {self.y_c:+.4f}\U0001D456 = {rho:.4f}\U000022C5exp({phi:.4f}\U0001D456)')
+            f'C = {self.x_c:.4f} {self.y_c:+.4f}\U0001D456 = {self.rho_c:.4f}\U000022C5exp({self.phi_c:.4f}\U0001D456)')
 
-        # Clamp values to (-1, 1)
-        self.x_c = max(-1.0, min(1.0, self.x_c))
-        self.y_c = max(-1.0, min(1.0, self.y_c))
-
-        slider_xc_val = (self.x_c + 1) / DELTA_SLIDER_C
-        slider_yc_val = (self.y_c + 1) / DELTA_SLIDER_C
+        if self.c_view == 'xy':
+            slider_xc_val = self.from_value_to_slider(self.x_c, 'xc')
+            slider_yc_val = self.from_value_to_slider(self.y_c, 'yc')
+        elif self.c_view == 'rhophi':
+            slider_xc_val = self.from_value_to_slider(self.rho_c, 'rho')
+            slider_yc_val = self.from_value_to_slider(self.phi_c, 'phi')
+        else:
+            raise ValueError('Invalid c_view')
 
         self.ui.horizontalSlider_XC.setValue(round(slider_xc_val))
         self.ui.horizontalSlider_YC.setValue(round(slider_yc_val))
@@ -666,22 +751,30 @@ class MJSet(MyWindowMandelbrotJulia):
         self.power = int(self.ui.comboBox_Power.currentText())
         self.horizon = float(self.ui.lineEdit_H.text())
         self.rebuild = True
-        self.ax_update()
+        if self.n == self.ui.horizontalSlider_N.value():
+            self.ax_update()
+        else:
+            self.ui.horizontalSlider_N.setValue(self.n)
+            self.slider_move = False
+            self.rebuild = True
 
     @Slot()
     def reset_im(self):
         if self.mode == 'mandelbrot':
-            self.horizon = 2e50
+            self.horizon = DEFAULT_HORIZON_MANDELBROT
         elif self.mode == 'julia':
-            self.horizon = 4
-        self.power = 2
+            self.horizon = DEFAULT_HORIZON_JULIA
+        self.power = DEFAULT_POWER
         self.reset_n()
         self.ui.lineEdit_H.setText(f'{self.horizon:.1e}')
         self.ui.comboBox_Power.setCurrentText(str(self.power))
 
     @Slot()
     def mode_update(self):
+        mode_old = self.mode
         self.mode = self.ui.comboBox_Set.currentText()
+        if self.mode == mode_old:
+            return
         if self.mode == 'julia':
             self.ui.frame.setMinimumSize(QSize(630, 517))
             self.ui.groupbox_C.setVisible(True)
@@ -732,6 +825,8 @@ class MJSet(MyWindowMandelbrotJulia):
             xmax = x_centre + delta_x / 2
             ymin = y_centre - delta_y / 2
             ymax = y_centre + delta_y / 2
+        else:
+            raise ValueError('Invalid regime')
         self.ax.set_xlim(xmin, xmax)
         self.ax.set_ylim(ymin, ymax)
         self.set_lim_dialog.accept()
@@ -745,6 +840,8 @@ class MJSet(MyWindowMandelbrotJulia):
             scale = 2.0
         elif regime == 'minus':
             scale = 0.5
+        else:
+            raise ValueError('Invalid regime')
         xmin_new = (xmin + xmax) / 2 - (xmax - xmin) / (2 * scale)
         xmax_new = (xmin + xmax) / 2 + (xmax - xmin) / (2 * scale)
         ymin_new = (ymin + ymax) / 2 - (ymax - ymin) / (2 * scale)
@@ -795,9 +892,7 @@ class MJSet(MyWindowMandelbrotJulia):
         x, y, z = mandelbrot_julia_set(xmin, xmax, ymin, ymax, x_c=self.x_c, y_c=self.y_c,
                                        height=img_height, length=img_width,
                                        n=self.n, horizon=self.horizon, power=self.power, mode=self.mode)
-        if self.regime == 'standard':
-            pass
-        elif self.regime == 'sin':
+        if self.regime == 'sin':
             z = (np.sin(z * self.freq))**2
         if self.save_image_dialog.ui.checkBox_withAxes.isChecked():
             fig, ax = plt.subplots(figsize=(length, height), dpi=dpi)
@@ -819,7 +914,7 @@ class MJSet(MyWindowMandelbrotJulia):
             else:
                 light = colors.LightSource(azdeg=self.azdeg, altdeg=self.altdeg)
                 data = light.shade(z.T, cmap=plt.get_cmap(self.colourmap), vert_exag=self.vert_exag,
-                                   norm=colors.PowerNorm(0.3), blend_mode='hsv')
+                                   blend_mode='hsv')
                 plt.imsave(filename, data, dpi=dpi, origin='lower')
         QMessageBox.information(self, 'Save File', f'Image is saved to {filename}')
         self.save_image_dialog.ui.pushButton_Save.setEnabled(True)
@@ -841,6 +936,8 @@ class MJSet(MyWindowMandelbrotJulia):
                 hh = int(self.save_image_dialog.ui.lineEdit_H.text())
                 ll = round(hh / aspect_ratio)
                 self.save_image_dialog.ui.lineEdit_L.setText(str(ll))
+            else:
+                raise ValueError('Invalid regime')
         self.edit_size_label()
 
 

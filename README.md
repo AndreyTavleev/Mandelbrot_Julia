@@ -142,7 +142,7 @@ limit configuration dialogue.
 
 The current X- and Y-limits, as well as the coordinates 
 of the centre are displayed above the Zoom buttons.
-Use the `Reset Limits` button to restore the default view range. 
+Use the `Reset limits` button to restore the default view range. 
 It varies depending on the set type and power.
 
 ## Adjustable parameters
@@ -161,6 +161,8 @@ This value can be:
   value of $N$ depends on the zoom level as 
   $N=100\cdot(1 + \lg({\rm zoom}))$.
 * **Power** — Degree of the polynomial $k$ ($2 \leq k \leq 8$).
+Mandelbrot sets shift when the power is changed, so use the 
+`Reset limits` button to re-centre the set.
 
 To generate an image with the desired **Horizon**, 
 **N** and **Power**, enter the values and click the 
@@ -169,11 +171,14 @@ the `Reset` button.
 
 * $C$ — **Complex constant for Julia set.** This can be 
 set in two ways:
-  * Clicking the `C-sliders` to adjust the real and imaginary parts
-  of $C = x_c + i y_c$. 
+  * By adjusting the `C-sliders` to modify either the real and 
+  imaginary parts of $C = x_c + i y_c$, or the modulus $\rho$ 
+  and argument $\varphi$: $C=\rho e^{i\varphi}$. The relevant 
+  option — `ReC, ImC` or `$\rho$, $\varphi$` — is selected via 
+  the corresponding dropdown menu.
   * Clicking the `set C` button, which allows input via: 
     * Real and imaginary parts, or
-    * Modulus $\rho$ and argument $\varphi$: $C=\rho e^{i\varphi}$. 
+    * Modulus and argument. 
 
 The current value of $C$ is displayed above the C-sliders. 
 To return to the default value $C = -0.8 - 0.156i$,

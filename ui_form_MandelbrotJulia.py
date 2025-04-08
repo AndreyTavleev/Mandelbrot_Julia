@@ -75,17 +75,6 @@ class Ui_MainWindowMandelbrotJulia(object):
         self.groupbox_C.setObjectName(u"groupbox_C")
         self.gridLayout_C = QGridLayout(self.groupbox_C)
         self.gridLayout_C.setObjectName(u"gridLayout_C")
-        self.label_C = QLabel(self.groupbox_C)
-        self.label_C.setObjectName(u"label_C")
-        font = QFont()
-        font.setPointSize(15)
-        self.label_C.setFont(font)
-        self.label_C.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.label_C.setTextInteractionFlags(
-            Qt.TextInteractionFlag.LinksAccessibleByMouse | Qt.TextInteractionFlag.TextSelectableByMouse)
-
-        self.gridLayout_C.addWidget(self.label_C, 0, 0, 1, 3)
-
         self.label_XC = QLabel(self.groupbox_C)
         self.label_XC.setObjectName(u"label_XC")
 
@@ -129,6 +118,22 @@ class Ui_MainWindowMandelbrotJulia(object):
         self.pushButton_ResetC.setSizePolicy(sizePolicy1)
 
         self.gridLayout_C.addWidget(self.pushButton_ResetC, 2, 2, 1, 1, Qt.AlignmentFlag.AlignHCenter)
+
+        self.label_C = QLabel(self.groupbox_C)
+        self.label_C.setObjectName(u"label_C")
+        font = QFont()
+        font.setPointSize(15)
+        self.label_C.setFont(font)
+        self.label_C.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.label_C.setTextInteractionFlags(
+            Qt.TextInteractionFlag.LinksAccessibleByMouse | Qt.TextInteractionFlag.TextSelectableByMouse)
+
+        self.gridLayout_C.addWidget(self.label_C, 0, 0, 1, 2)
+
+        self.comboBox_viewC = QComboBox(self.groupbox_C)
+        self.comboBox_viewC.setObjectName(u"comboBox_viewC")
+
+        self.gridLayout_C.addWidget(self.comboBox_viewC, 0, 2, 1, 1, Qt.AlignmentFlag.AlignHCenter)
 
         self.verticalLayout.addWidget(self.groupbox_C)
 
@@ -401,7 +406,8 @@ class Ui_MainWindowMandelbrotJulia(object):
         QWidget.setTabOrder(self.horizontalSlider_N, self.pushButton_ResetN)
         QWidget.setTabOrder(self.pushButton_ResetN, self.horizontalSlider_XC)
         QWidget.setTabOrder(self.horizontalSlider_XC, self.horizontalSlider_YC)
-        QWidget.setTabOrder(self.horizontalSlider_YC, self.pushButton_setC)
+        QWidget.setTabOrder(self.horizontalSlider_YC, self.comboBox_viewC)
+        QWidget.setTabOrder(self.comboBox_viewC, self.pushButton_setC)
         QWidget.setTabOrder(self.pushButton_setC, self.pushButton_ResetC)
         QWidget.setTabOrder(self.pushButton_ResetC, self.scrollArea)
 
@@ -415,12 +421,12 @@ class Ui_MainWindowMandelbrotJulia(object):
         MainWindowMandelbrotJulia.setWindowTitle(
             QCoreApplication.translate("MainWindowMandelbrotJulia", u"Mandelbrot & Julia Sets", None))
         self.pushButton_ResetN.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"Reset N", None))
-        self.label_C.setText(
-            QCoreApplication.translate("MainWindowMandelbrotJulia", u"C = x + i*y = rho * e^{i*phi}", None))
         self.label_XC.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"X_c:", None))
         self.pushButton_setC.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"Set C", None))
         self.label_YC.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"Y_c:", None))
         self.pushButton_ResetC.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"Reset C", None))
+        self.label_C.setText(
+            QCoreApplication.translate("MainWindowMandelbrotJulia", u"C = x + i*y = rho * e^{i*phi}", None))
         self.label_Set.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"Set:", None))
         self.label_N.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"N:", None))
         self.label_Horizon.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"Horizon:", None))
@@ -447,5 +453,5 @@ class Ui_MainWindowMandelbrotJulia(object):
         self.pushButton_NewLims.setText(
             QCoreApplication.translate("MainWindowMandelbrotJulia", u"Set new limits", None))
         self.pushButton_ResetLims.setText(
-            QCoreApplication.translate("MainWindowMandelbrotJulia", u"Reset Limits", None))
+            QCoreApplication.translate("MainWindowMandelbrotJulia", u"Reset limits", None))
     # retranslateUi
