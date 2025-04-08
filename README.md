@@ -241,22 +241,19 @@ The image renders at the specified resolution, preserving
 shading and colourmap preferences.
 
 ## Gallery
-Overall, have fun!
-<details>
- <summary><i>Some screenshots:</i></summary>
+Overall, have fun! Some screenshots:
 
- ![](im_3.png)
- ![](im_4.png)
- ![](im_5.png)
+![](im_3.png)
+![](im_4.png)
+![](im_5.png)
 `Sin` colourisation results in beautifully cycling colours. 
- The $\omega$ parameter controls how frequently the 
- colours cycle:
- ![](im_6.png)
- ![](im_7.png)
+The $\omega$ parameter controls how frequently the 
+colours cycle:
+![](im_6.png)
+![](im_7.png)
 Shading option (`vert_exag=3.0`) with
- [custom colourmap](Colourmap.json):
- ![](im_8.png)
- ![](im_9.png)
+[custom colourmap](Colourmap.json):
+![](im_8.png)
+![](im_9.png)
 `Sin` colourisation and shading (`vert_exag=100.0`):
- ![](im_10.png)
-</details>
+![](im_10.png)
