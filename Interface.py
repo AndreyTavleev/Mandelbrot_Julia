@@ -1,9 +1,9 @@
+import json
 import math
 import sys
 
 import matplotlib
 import numpy as np
-import json
 from PySide6.QtCore import Slot, QSize, Qt, QTimer, QPointF
 from PySide6.QtGui import QPalette, QIcon, QPixmap, QPainter, QColor, QBrush, QMouseEvent, QLinearGradient, QImage
 from PySide6.QtWidgets import (QApplication, QDialog, QVBoxLayout, QMainWindow,
@@ -57,6 +57,22 @@ class MplCanvas(FigureCanvasQTAgg):
     def __init__(self, parent=None):
         self.fig, self.ax = plt.subplots()
         super().__init__(self.fig)
+
+
+class CustomToolbar(NavigationToolbar):
+    def __init__(self, canvas, parent):
+        super().__init__(canvas, parent)
+        self.parent = parent
+        unwanted_buttons = ['Subplots', 'Customize']
+        for action in self.actions():
+            if action.text() in unwanted_buttons:
+                self.removeAction(action)
+
+    def home(self):
+        self.parent.reset_lims()
+
+    def save_figure(self):
+        self.parent.save_image()
 
 
 class BaseDialog(QDialog):
@@ -349,7 +365,7 @@ class MJSet(MyWindowMandelbrotJulia):
         im.set(clim=(im.get_array().min(), im.get_array().max()))
         self.fig.tight_layout()
 
-        self.toolbar = NavigationToolbar(self.sc, self)
+        self.toolbar = CustomToolbar(self.sc, self)
         self.main_layout = QVBoxLayout()
         self.main_layout.addWidget(self.sc)
         self.main_layout.addWidget(self.toolbar)
@@ -436,7 +452,7 @@ class MJSet(MyWindowMandelbrotJulia):
         if self.regime == 'standard':
             pass
         elif self.regime == 'sin':
-            data = (np.sin(data * self.freq))**2
+            data = (np.sin(data * self.freq)) ** 2
         if not self.shading:
             im.set(data=data, extent=(xmin, xmax, ymin, ymax), cmap=self.colourmap)
         else:
@@ -710,7 +726,7 @@ class MJSet(MyWindowMandelbrotJulia):
             self.ax.tick_params(axis='both', colors='k')
         self.fig.canvas.draw_idle()
         self.main_layout.removeWidget(self.toolbar)
-        self.toolbar = NavigationToolbar(self.sc, self)
+        self.toolbar = CustomToolbar(self.sc, self)
         self.main_layout.addWidget(self.toolbar)
 
     def set_shading_dialog(self):
@@ -893,7 +909,7 @@ class MJSet(MyWindowMandelbrotJulia):
                                        height=img_height, length=img_width,
                                        n=self.n, horizon=self.horizon, power=self.power, mode=self.mode)
         if self.regime == 'sin':
-            z = (np.sin(z * self.freq))**2
+            z = (np.sin(z * self.freq)) ** 2
         if self.save_image_dialog.ui.checkBox_withAxes.isChecked():
             fig, ax = plt.subplots(figsize=(length, height), dpi=dpi)
             if not self.shading:

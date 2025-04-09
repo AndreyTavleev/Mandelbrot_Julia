@@ -230,7 +230,8 @@ the `Remove shading` button.
 ## Saving
 
 Generated images can be exported in multiple formats 
-for high-quality output by clicking the `Save` button:
+for high-quality output by clicking the `Save` button or
+the `💾` icon on the matplotlib toolbar under the image:
 * **Supported Formats**: PNG, JPEG, TIFF, PDF, and EPS.
 * **Customisation**: Specify dimensions (in inches) and 
 dots per inches (DPI) to control resolution and file size.
