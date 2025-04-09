@@ -190,7 +190,7 @@ The application offers customisable colour schemes
 and shading effects to enhance the visualisation of 
 the Mandelbrot and Julia sets:
 
-### Colourmaps 
+### Colourmaps
 Choose from a wide range of [matplotlib 
 colour palettes](https://matplotlib.org/stable/users/explain/colors/colormaps.html) 
 via the dropdown menu. Each option displays a preview 
@@ -201,7 +201,7 @@ you can create your own colourmap by placing colour points
 along the gradient. You can also save the created colourmap
 to a file and load previously saved colourmaps to edit or use them.
 
-### Colouring regimes 
+### Colouring regimes
 There are two colouring techniques available in the 
 `Regime` dropdown menu:
 * `Standard`: Applies linear colour scaling, mapping the 
