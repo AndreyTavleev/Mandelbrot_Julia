@@ -1,0 +1,21 @@
+{
+  "mode": "mandelbrot",
+  "n": 1003,
+  "horizon": 2e+50,
+  "power": 2,
+  "lims_x": [
+    -1.9415524417847085,
+    -1.9415524394561112
+  ],
+  "lims_y": [
+    0.0001338592880161,
+    0.0001338605976885
+  ],
+  "colourmap": "twilight",
+  "regime": "sin",
+  "freq": 0.01,
+  "shading": true,
+  "azdeg": 315.0,
+  "altdeg": 5.0,
+  "vert_exag": 100.0
+}

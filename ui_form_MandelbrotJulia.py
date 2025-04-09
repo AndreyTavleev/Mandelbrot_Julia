@@ -151,7 +151,7 @@ class Ui_MainWindowMandelbrotJulia(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 228, 741))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 228, 749))
         self.gridLayout = QGridLayout(self.scrollAreaWidgetContents)
         self.gridLayout.setObjectName(u"gridLayout")
         self.verticalLayout_HNPColour = QVBoxLayout()
@@ -291,10 +291,19 @@ class Ui_MainWindowMandelbrotJulia(object):
 
         self.verticalLayout_HNPColour.addWidget(self.line_4)
 
-        self.pushButton_Save = QPushButton(self.scrollAreaWidgetContents)
-        self.pushButton_Save.setObjectName(u"pushButton_Save")
+        self.horizontalLayout_4 = QHBoxLayout()
+        self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
+        self.label_2 = QLabel(self.scrollAreaWidgetContents)
+        self.label_2.setObjectName(u"label_2")
 
-        self.verticalLayout_HNPColour.addWidget(self.pushButton_Save)
+        self.horizontalLayout_4.addWidget(self.label_2, 0, Qt.AlignmentFlag.AlignHCenter)
+
+        self.comboBox_SaveLoad = QComboBox(self.scrollAreaWidgetContents)
+        self.comboBox_SaveLoad.setObjectName(u"comboBox_SaveLoad")
+
+        self.horizontalLayout_4.addWidget(self.comboBox_SaveLoad)
+
+        self.verticalLayout_HNPColour.addLayout(self.horizontalLayout_4)
 
         self.line_5 = QFrame(self.scrollAreaWidgetContents)
         self.line_5.setObjectName(u"line_5")
@@ -397,8 +406,8 @@ class Ui_MainWindowMandelbrotJulia(object):
         QWidget.setTabOrder(self.comboBox_regime, self.lineEdit_freq)
         QWidget.setTabOrder(self.lineEdit_freq, self.pushButton_setShading)
         QWidget.setTabOrder(self.pushButton_setShading, self.pushButton_removeShading)
-        QWidget.setTabOrder(self.pushButton_removeShading, self.pushButton_Save)
-        QWidget.setTabOrder(self.pushButton_Save, self.pushButton_zoom_plus)
+        QWidget.setTabOrder(self.pushButton_removeShading, self.comboBox_SaveLoad)
+        QWidget.setTabOrder(self.comboBox_SaveLoad, self.pushButton_zoom_plus)
         QWidget.setTabOrder(self.pushButton_zoom_plus, self.pushButton_zoom_minus)
         QWidget.setTabOrder(self.pushButton_zoom_minus, self.pushButton_NewLims)
         QWidget.setTabOrder(self.pushButton_NewLims, self.pushButton_ResetLims)
@@ -440,7 +449,7 @@ class Ui_MainWindowMandelbrotJulia(object):
                                                                                                    "shading", None))
         self.pushButton_removeShading.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"Remove \n"
                                                                                                       "shading", None))
-        self.pushButton_Save.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"Save", None))
+        self.label_2.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"Save / Load:", None))
         self.label_CurGrid.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"Current grid:", None))
         self.label_limX_1.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"X-axis limits:", None))
         self.label_limX.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"TextLabel", None))

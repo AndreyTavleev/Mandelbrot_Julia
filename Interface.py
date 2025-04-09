@@ -54,7 +54,7 @@ def polar_coordinates(x_c, y_c):
 
 
 class MplCanvas(FigureCanvasQTAgg):
-    def __init__(self, parent=None):
+    def __init__(self):
         self.fig, self.ax = plt.subplots()
         super().__init__(self.fig)
 
@@ -335,6 +335,7 @@ class MJSet(MyWindowMandelbrotJulia):
         self.ui.comboBox_regime.addItems(['standard', 'sin'])
         self.ui.comboBox_Power.addItems([str(i) for i in range(2, 9)])
         self.ui.comboBox_viewC.addItems(['ReC, ImC', '\U000003C1, \U000003D5'])
+        self.ui.comboBox_SaveLoad.addItems(['Save image', 'Save metadata', 'Load metadata'])
 
         for i, cmap in enumerate(plt.colormaps()):
             if i == 0:
@@ -348,7 +349,7 @@ class MJSet(MyWindowMandelbrotJulia):
 
     def setup_canvas_and_toolbar(self):
         """Sets up the matplotlib canvas and initial plot configuration."""
-        self.sc = MplCanvas(self)
+        self.sc = MplCanvas()
         self.ax, self.fig = self.sc.ax, self.sc.fig
         self.fig.patch.set_facecolor(self.ui.centralwidget.palette().color(QPalette.Window).name())
 
@@ -377,6 +378,7 @@ class MJSet(MyWindowMandelbrotJulia):
         self.ui.comboBox_Colourmap.activated.connect(self.colourmap_update)
         self.ui.comboBox_regime.activated.connect(self.set_regime)
         self.ui.comboBox_viewC.activated.connect(self.change_c_view)
+        self.ui.comboBox_SaveLoad.activated.connect(self.save_load)
 
         self.ui.lineEdit_freq.editingFinished.connect(self.set_freq)
 
@@ -391,7 +393,6 @@ class MJSet(MyWindowMandelbrotJulia):
             (self.ui.pushButton_zoom_minus, lambda: self.zoom('minus')),
             (self.ui.pushButton_NewLims, self.set_limits_dialog),
             (self.ui.pushButton_ResetLims, self.reset_lims),
-            (self.ui.pushButton_Save, self.save_image),
             (self.ui.pushButton_ResetN, self.reset_n),
             (self.ui.pushButton_ResetC, self.reset_c),
             (self.ui.pushButton_setC, self.set_c_dial),
@@ -495,6 +496,8 @@ class MJSet(MyWindowMandelbrotJulia):
 
     def set_regime(self):
         regime = self.ui.comboBox_regime.currentText()
+        if self.regime == regime:
+            return
         self.regime = self.ui.comboBox_regime.currentText()
         if regime == 'standard':
             self.ui.lineEdit_freq.setVisible(False)
@@ -502,7 +505,8 @@ class MJSet(MyWindowMandelbrotJulia):
         elif regime == 'sin':
             self.ui.lineEdit_freq.setVisible(True)
             self.ui.label_freq.setVisible(True)
-        self.ax_update()
+        if not self.no_ax_update:
+            self.ax_update()
 
     def set_freq(self):
         self.freq = float(self.ui.lineEdit_freq.text())
@@ -561,7 +565,7 @@ class MJSet(MyWindowMandelbrotJulia):
             self.phi_c = self.delta_slider_yc * i
             self.x_c, self.y_c = cartesian_coordinates(self.rho_c, self.phi_c)
         else:
-            raise ValueError('Invalid c_view')
+            raise ValueError('Invalid c_view.')
         self.ui.label_C.setText(
             f'C = {self.x_c:.4f} {self.y_c:+.4f}\U0001D456 = {self.rho_c:.4f}\U000022C5exp({self.phi_c:.4f}\U0001D456)')
         if not self.no_ax_update:
@@ -593,7 +597,7 @@ class MJSet(MyWindowMandelbrotJulia):
             slider_xc_val = self.from_value_to_slider(self.rho_c, 'rho')
             slider_yc_val = self.from_value_to_slider(self.phi_c, 'phi')
         else:
-            raise ValueError('Invalid c_view')
+            raise ValueError('Invalid c_view.')
         self.no_ax_update = True
         self.ui.horizontalSlider_XC.setValue(round(slider_xc_val))
         self.ui.horizontalSlider_YC.setValue(round(slider_yc_val))
@@ -609,7 +613,7 @@ class MJSet(MyWindowMandelbrotJulia):
         elif regime == 'phi':
             return value / self.delta_slider_yc
         else:
-            raise ValueError('Invalid regime')
+            raise ValueError('Invalid regime.')
 
     def reset_c(self):
         if self.c_view == 'xy':
@@ -619,7 +623,7 @@ class MJSet(MyWindowMandelbrotJulia):
             ini_slider_xc_val = self.from_value_to_slider(self.rho_c_0, 'rho')
             ini_slider_yc_val = self.from_value_to_slider(self.phi_c_0, 'phi')
         else:
-            raise ValueError('Invalid c_view')
+            raise ValueError('Invalid c_view.')
         self.ui.horizontalSlider_XC.setValue(round(ini_slider_xc_val))
         self.ui.horizontalSlider_YC.setValue(round(ini_slider_yc_val))
 
@@ -645,18 +649,14 @@ class MJSet(MyWindowMandelbrotJulia):
             # Clamp values to (-1, 1)
             self.x_c = max(-1.0, min(1.0, self.x_c))
             self.y_c = max(-1.0, min(1.0, self.y_c))
-            self.rho_c, self.phi_c = polar_coordinates(self.x_c, self.y_c)
         elif regime == 'rhophi':
             self.rho_c = abs(float(self.set_c_dialog.ui.lineEdit_rhoC.text()))
             # Clamp value to (0, sqrt(2))
             self.rho_c = max(0.0, min(math.sqrt(2.0), self.rho_c))
             self.phi_c = float(self.set_c_dialog.ui.lineEdit_phiC.text()) % (2 * math.pi)
-            self.x_c, self.y_c = cartesian_coordinates(self.rho_c, self.phi_c)
             self.phi_c = self.phi_c + 2 * math.pi * (self.phi_c < 0)  # Ensure the angle is in [0, 2pi]
         else:
-            raise ValueError('Invalid regime')
-        self.ui.label_C.setText(
-            f'C = {self.x_c:.4f} {self.y_c:+.4f}\U0001D456 = {self.rho_c:.4f}\U000022C5exp({self.phi_c:.4f}\U0001D456)')
+            raise ValueError('Invalid regime.')
 
         if self.c_view == 'xy':
             slider_xc_val = self.from_value_to_slider(self.x_c, 'xc')
@@ -665,7 +665,7 @@ class MJSet(MyWindowMandelbrotJulia):
             slider_xc_val = self.from_value_to_slider(self.rho_c, 'rho')
             slider_yc_val = self.from_value_to_slider(self.phi_c, 'phi')
         else:
-            raise ValueError('Invalid c_view')
+            raise ValueError('Invalid c_view.')
 
         self.ui.horizontalSlider_XC.setValue(round(slider_xc_val))
         self.ui.horizontalSlider_YC.setValue(round(slider_yc_val))
@@ -694,12 +694,13 @@ class MJSet(MyWindowMandelbrotJulia):
     def create_and_set_colourmap(self):
         self.colourmap = self.gradient_dialog.GradWidget.make_colourmap()
         self.user_defined_colourmap = self.gradient_dialog.GradWidget.points
-        if not self.shading:
-            im = self.ax.images[0]
-            im.set(cmap=self.colourmap)
-            self.fig.canvas.draw_idle()
-        else:
-            self.ax_update()
+        if not self.no_ax_update:
+            if not self.shading:
+                im = self.ax.images[0]
+                im.set(cmap=self.colourmap)
+                self.fig.canvas.draw_idle()
+            else:
+                self.ax_update()
 
     def save_colourmap(self):
         fname = QFileDialog.getSaveFileName(self, caption='Choose a filename to save to',
@@ -768,7 +769,8 @@ class MJSet(MyWindowMandelbrotJulia):
         self.horizon = float(self.ui.lineEdit_H.text())
         self.rebuild = True
         if self.n == self.ui.horizontalSlider_N.value():
-            self.ax_update()
+            if not self.no_ax_update:
+                self.ax_update()
         else:
             self.ui.horizontalSlider_N.setValue(self.n)
             self.slider_move = False
@@ -799,8 +801,9 @@ class MJSet(MyWindowMandelbrotJulia):
             self.ui.groupbox_C.setVisible(False)
         if not self.isFullScreen():
             self.adjustSize()
-        self.reset_lims()
-        self.reset_im()
+        if not self.no_ax_update:
+            self.reset_lims()
+            self.reset_im()
 
     @Slot()
     def reset_lims(self):
@@ -842,7 +845,7 @@ class MJSet(MyWindowMandelbrotJulia):
             ymin = y_centre - delta_y / 2
             ymax = y_centre + delta_y / 2
         else:
-            raise ValueError('Invalid regime')
+            raise ValueError('Invalid regime.')
         self.ax.set_xlim(xmin, xmax)
         self.ax.set_ylim(ymin, ymax)
         self.set_lim_dialog.accept()
@@ -857,13 +860,32 @@ class MJSet(MyWindowMandelbrotJulia):
         elif regime == 'minus':
             scale = 0.5
         else:
-            raise ValueError('Invalid regime')
+            raise ValueError('Invalid regime.')
         xmin_new = (xmin + xmax) / 2 - (xmax - xmin) / (2 * scale)
         xmax_new = (xmin + xmax) / 2 + (xmax - xmin) / (2 * scale)
         ymin_new = (ymin + ymax) / 2 - (ymax - ymin) / (2 * scale)
         ymax_new = (ymin + ymax) / 2 + (ymax - ymin) / (2 * scale)
         self.ax.set_xlim(xmin_new, xmax_new)
         self.ax.set_ylim(ymin_new, ymax_new)
+
+    def save_load(self):
+        option = self.ui.comboBox_SaveLoad.currentIndex()
+        if option == 0:
+            self.save_image()
+        elif option == 1:
+            fname = QFileDialog.getSaveFileName(self, caption='Choose a filename to save to',
+                                                dir='$HOME/Desktop/Metadata.json',
+                                                filter='json(*.json)')[0]
+            if fname:
+                self.save_metadata(fname)
+        elif option == 2:
+            fname = QFileDialog.getOpenFileName(self, caption='Choose a filename to load from',
+                                                filter='json(*.json)')[0]
+            if fname:
+                self.load_metadata(fname)
+        else:
+            raise ValueError('Invalid save/load option.')
+        self.ui.comboBox_SaveLoad.setCurrentIndex(0)
 
     def save_image(self):
         self.save_image_dialog = DialogSave()
@@ -890,10 +912,8 @@ class MJSet(MyWindowMandelbrotJulia):
         fname = QFileDialog.getSaveFileName(self, caption='Choose a filename to save to',
                                             dir='$HOME/Desktop/Image.png',
                                             filter=filter_save)[0]
-        if not fname:
-            return
-
-        self.save_file(fname)
+        if fname:
+            self.save_file(fname)
 
     def save_file(self, filename):
         self.save_image_dialog.ui.pushButton_Save.setEnabled(False)
@@ -953,8 +973,86 @@ class MJSet(MyWindowMandelbrotJulia):
                 ll = round(hh / aspect_ratio)
                 self.save_image_dialog.ui.lineEdit_L.setText(str(ll))
             else:
-                raise ValueError('Invalid regime')
+                raise ValueError('Invalid regime.')
         self.edit_size_label()
+
+    def save_metadata(self, path):
+        metadata = {'mode': self.mode, 'n': self.n, 'horizon': self.horizon, 'power': self.power}
+        if self.mode == 'julia':
+            metadata['x_c'] = self.x_c
+            metadata['y_c'] = self.y_c
+        metadata['lims_x'] = self.ax.get_xlim()
+        metadata['lims_y'] = self.ax.get_ylim()
+        if self.ui.comboBox_Colourmap.currentIndex() == self.ui.comboBox_Colourmap.count() - 1:
+            colourmap = []
+            for _, pos, colour in self.user_defined_colourmap:
+                colourmap.append({'position': pos, 'r': colour.red() / 255.0,
+                                  'g': colour.green() / 255.0, 'b': colour.blue() / 255.0})
+            metadata['colourmap'] = colourmap
+            print(colourmap)
+        else:
+            metadata['colourmap'] = self.ui.comboBox_Colourmap.currentText()
+        metadata['regime'] = self.regime
+        if self.regime == 'sin':
+            metadata['freq'] = self.freq
+        metadata['shading'] = self.shading
+        if self.shading:
+            metadata['azdeg'] = self.azdeg
+            metadata['altdeg'] = self.altdeg
+            metadata['vert_exag'] = self.vert_exag
+        with open(path, 'w') as f:
+            json.dump(metadata, f, indent=2)
+
+    def load_metadata(self, path):
+        with open(path, 'r') as f:
+            metadata = json.load(f)
+        self.no_ax_update = True  # prevent ax_update until setting all the parameters
+        self.ui.comboBox_Set.setCurrentText(metadata['mode'])
+        self.ui.comboBox_Set.activated.emit(1)
+        if self.mode == 'julia':
+            self.c_view = 'xy'
+            metadata['x_c'] = max(-1.0, min(1.0, metadata['x_c']))
+            metadata['y_c'] = max(-1.0, min(1.0, metadata['y_c']))
+            self.ui.horizontalSlider_XC.setValue(self.from_value_to_slider(metadata['x_c'], 'xc'))
+            self.ui.horizontalSlider_YC.setValue(self.from_value_to_slider(metadata['y_c'], 'yc'))
+        self.ui.lineEdit_N.setText(str(metadata['n']))
+        self.ui.lineEdit_H.setText(str(metadata['horizon']))
+        self.ui.comboBox_Power.setCurrentText(str(metadata['power']))
+        self.ui.pushButton_Rebuild.clicked.emit()
+        if isinstance(metadata['colourmap'], str):
+            self.ui.comboBox_Colourmap.setCurrentText(metadata['colourmap'])
+            self.colourmap = metadata['colourmap']
+        else:
+            self.user_defined_colourmap = []
+            for i, item in enumerate(metadata['colourmap']):
+                pos = float(item['position'])
+                r = round(float(item['r']) * 255)
+                g = round(float(item['g']) * 255)
+                b = round(float(item['b']) * 255)
+                colour = QColor(r, g, b)
+                pid = i + 1
+                self.user_defined_colourmap.append((pid, pos, colour))
+            self.user_defined_colourmap.sort(key=lambda t: t[1])
+            self.ui.comboBox_Colourmap.setCurrentText('Set your own colourmap...')
+            self.ui.comboBox_Colourmap.activated.emit(1)
+            self.gradient_dialog.ui.pushButton_Apply.clicked.emit()
+            self.gradient_dialog.accept()
+            self.gradient_dialog.deleteLater()
+            self.gradient_dialog = None
+        self.shading = metadata['shading']
+        if self.shading:
+            self.azdeg = metadata['azdeg']
+            self.altdeg = metadata['altdeg']
+            self.vert_exag = metadata['vert_exag']
+            self.azdeg = max(0.0, min(360.0, self.azdeg))
+            self.altdeg = max(0.0, min(90.0, self.altdeg))
+        self.ui.comboBox_regime.setCurrentText(metadata['regime'])
+        if metadata['regime'] == 'sin':
+            self.freq = metadata['freq']
+        self.ui.comboBox_regime.activated.emit(1)
+        self.no_ax_update = False
+        self.ax.set_xlim(metadata['lims_x'][0], metadata['lims_x'][1])
+        self.ax.set_ylim(metadata['lims_y'][0], metadata['lims_y'][1])
 
 
 if __name__ == '__main__':

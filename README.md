@@ -15,8 +15,8 @@ parameters, customise colours and save the generated images.
 * Shading options for enhanced visuals
 * Export images to common formats
 
-![](im_1.png)
-![](im_2.png)
+![](im_met_col/im_1.png)
+![](im_met_col/im_2.png)
 
 ## Contents
 
@@ -30,7 +30,7 @@ parameters, customise colours and save the generated images.
   * [Colourmaps](#colourmaps)
   * [Colouring regimes](#colouring-regimes)
   * [Shading](#shading)
-* [Saving](#saving)
+* [Saving and loading](#saving-and-loading)
 * [Gallery](#gallery)
 
 ## Installation
@@ -227,11 +227,15 @@ and [tutorials](https://matplotlib.org/stable/gallery/showcase/mandelbrot.html).
 To revert to the flat colourmap display, click 
 the `Remove shading` button.
 
-## Saving
+## Saving and loading
 
-Generated images can be exported in multiple formats 
-for high-quality output by clicking the `Save` button or
-the `💾` icon on the matplotlib toolbar under the image:
+`Save / Load` dropdown menu allows you to save images, 
+as well as to save and load metadata.
+
+**Generated images** can be exported in multiple formats 
+for high-quality output by choosing the `Save image` option
+or clicking the `💾` icon on the matplotlib toolbar
+under the image:
 * **Supported Formats**: PNG, JPEG, TIFF, PDF, and EPS.
 * **Customisation**: Specify dimensions (in inches) and 
 dots per inches (DPI) to control resolution and file size.
@@ -241,20 +245,34 @@ when adjusting width or height.
 The image renders at the specified resolution, preserving 
 shading and colourmap preferences.
 
-## Gallery
-Overall, have fun! Some screenshots:
+**Metadata** refers to a JSON file that contains all the 
+information about the generated fractal  — set type, 
+calculation parameters, axis limits, and colouring/shading 
+options. By selecting the `Save metadata` option, you can 
+save the current fractal for quick access in the future. 
+To load a previously saved fractal, choose the 
+`Load metadata` option.
 
-![](im_3.png)
-![](im_4.png)
-![](im_5.png)
+## Gallery
+Overall, have fun! Some screenshots with 
+corresponding **metadata**:
+
+[First](im_met_col/Metadata_3.json):
+![](im_met_col/im_3.png)
+[Second](im_met_col/Metadata_4.json):
+![](im_met_col/im_4.png)
+[Third](im_met_col/Metadata_5.json):
+![](im_met_col/im_5.png)
 `Sin` colourisation results in beautifully cycling colours. 
 The $\omega$ parameter controls how frequently the 
-colours cycle:
-![](im_6.png)
-![](im_7.png)
+colours cycle ([Metadata](im_met_col/Metadata_6.json)):
+![](im_met_col/im_6.png)
+[Fifth](im_met_col/Metadata_7.json):
+![](im_met_col/im_7.png)
 Shading option (`vert_exag=3.0`) with
-[custom colourmap](Colourmap.json):
-![](im_8.png)
-![](im_9.png)
-`Sin` colourisation and shading (`vert_exag=100.0`):
-![](im_10.png)
+[custom colourmap](im_met_col/Colourmap.json) ([Metadata](im_met_col/Metadata_8.json)):
+![](im_met_col/im_8.png)
+[Seventh](im_met_col/Metadata_9.json):
+![](im_met_col/im_9.png)
+`Sin` colourisation and shading (`vert_exag=100.0`, [Metadata](im_met_col/Metadata_10.json)):
+![](im_met_col/im_10.png)

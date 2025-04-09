@@ -1,0 +1,17 @@
+{
+  "mode": "mandelbrot",
+  "n": 379,
+  "horizon": 2e+50,
+  "power": 2,
+  "lims_x": [
+    -0.5298186654872336,
+    -0.5257824873239358
+  ],
+  "lims_y": [
+    0.6126829077000543,
+    0.6164962294003479
+  ],
+  "colourmap": "turbo",
+  "regime": "standard",
+  "shading": false
+}
