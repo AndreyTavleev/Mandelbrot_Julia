@@ -515,7 +515,7 @@ class MJSet(MyWindowMandelbrotJulia):
     @property
     def n(self):
         if self.rebuild:
-            nn = int(float(self.ui.lineEdit_N.text()))
+            nn = abs(int(float(self.ui.lineEdit_N.text())))
             self.ui.lineEdit_N.setText(str(nn))
             return nn
         if self.slider_move:
@@ -768,13 +768,29 @@ class MJSet(MyWindowMandelbrotJulia):
         self.power = int(self.ui.comboBox_Power.currentText())
         self.horizon = float(self.ui.lineEdit_H.text())
         self.rebuild = True
-        if self.n == self.ui.horizontalSlider_N.value():
-            if not self.no_ax_update:
-                self.ax_update()
+        nn = self.n
+        if nn <= 4000:
+            if nn == self.ui.horizontalSlider_N.value():
+                if not self.no_ax_update:
+                    self.ax_update()
+            else:
+                self.ui.horizontalSlider_N.setValue(nn)
+                self.slider_move = False
+                self.rebuild = True
         else:
-            self.ui.horizontalSlider_N.setValue(self.n)
-            self.slider_move = False
-            self.rebuild = True
+            if self.no_ax_update:
+                self.ui.horizontalSlider_N.setValue(4000)
+                self.ui.lineEdit_N.setText(str(nn))
+                self.slider_move = False
+                self.rebuild = True
+            else:
+                self.no_ax_update = True
+                self.ui.horizontalSlider_N.setValue(4000)
+                self.no_ax_update = False
+                self.ui.lineEdit_N.setText(str(nn))
+                self.slider_move = False
+                self.rebuild = True
+                self.ax_update()
 
     @Slot()
     def reset_im(self):
