@@ -298,7 +298,9 @@ Below is an example video created with the default values for all flags:
 $ python3 zoom_animation.py
 ```
 
-![](im_met_col/video.mp4)
+The video has been compressed for README:
+
+https://github.com/user-attachments/assets/b6f3584d-e586-4d01-9979-5343ae6c0b84
 
 ## Gallery
 Overall, have fun! Some screenshots with 
