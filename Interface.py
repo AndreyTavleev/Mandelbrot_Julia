@@ -84,11 +84,12 @@ class ImageExporter:
         self.save_image_dialog.ui.checkBox_withAxes.stateChanged.connect(self.edit_size_label)
         self.save_image_dialog.ui.checkBox_lockAR.stateChanged.connect(lambda: self.edit_size('L'))
 
-        self.save_image_dialog.ui.lineEdit_L.setText('10')
-        self.save_image_dialog.ui.lineEdit_H.setText('10')
-        self.save_image_dialog.ui.lineEdit_DPI.setText('300')
+        self.save_image_dialog.ui.lineEdit_L.setText('1000')
+        self.save_image_dialog.ui.lineEdit_H.setText('1000')
+        self.save_image_dialog.ui.lineEdit_DPI.setText(str(int(self.fig.dpi)))
+        self.save_image_dialog.ui.lineEdit_DPI.setEnabled(False)
 
-        self.save_image_dialog.ui.label_Size.setText('Image size: \n3000 \U000000D7 3000 pix.')
+        self.save_image_dialog.ui.label_Size.setText('Image size: \n1000 \U000000D7 1000 pix.')
 
         self.save_image_dialog.ui.pushButton_Save.clicked.connect(self.save_dial)
 
@@ -108,9 +109,11 @@ class ImageExporter:
         self.save_image_dialog.ui.pushButton_Save.setEnabled(False)
         length = int(self.save_image_dialog.ui.lineEdit_L.text())
         height = int(self.save_image_dialog.ui.lineEdit_H.text())
-        dpi = int(self.save_image_dialog.ui.lineEdit_DPI.text())
-        img_width = dpi * length
-        img_height = dpi * height
+        img_width, img_height = length, height
+        if self.save_image_dialog.ui.checkBox_withAxes.isChecked():
+            dpi = int(self.save_image_dialog.ui.lineEdit_DPI.text())
+            img_width *= dpi
+            img_height *= dpi
         xmin, xmax = self.ax.get_xlim()
         ymin, ymax = self.ax.get_ylim()
         print(xmin, xmax, ymin, ymax, self.x_c, self.y_c, self.horizon)
@@ -136,20 +139,25 @@ class ImageExporter:
             plt.savefig(filename, dpi=dpi)
         else:
             if not self.shading:
-                plt.imsave(filename, z.T, dpi=dpi, cmap=self.colourmap, origin='lower')
+                plt.imsave(filename, z.T, cmap=self.colourmap, origin='lower')
             else:
                 light = colors.LightSource(azdeg=self.azdeg, altdeg=self.altdeg)
                 data = light.shade(z.T, cmap=plt.get_cmap(self.colourmap), vert_exag=self.vert_exag,
                                    blend_mode='hsv')
-                plt.imsave(filename, data, dpi=dpi, origin='lower')
+                plt.imsave(filename, data, origin='lower')
         QMessageBox.information(self, 'Save File', f'Image is saved to {filename}')
         self.save_image_dialog.ui.pushButton_Save.setEnabled(True)
 
     def edit_size_label(self):
         ll = int(self.save_image_dialog.ui.lineEdit_L.text())
         h = int(self.save_image_dialog.ui.lineEdit_H.text())
-        dpi = int(self.save_image_dialog.ui.lineEdit_DPI.text())
-        self.save_image_dialog.ui.label_Size.setText(f'Image size: \n{ll * dpi} \U000000D7 {h * dpi} pix.')
+        if self.save_image_dialog.ui.checkBox_withAxes.isChecked():
+            self.save_image_dialog.ui.lineEdit_DPI.setEnabled(True)
+            dpi = int(self.save_image_dialog.ui.lineEdit_DPI.text())
+            self.save_image_dialog.ui.label_Size.setText(f'Image size: \n{ll * dpi} \U000000D7 {h * dpi} pix.')
+        else:
+            self.save_image_dialog.ui.lineEdit_DPI.setEnabled(False)
+            self.save_image_dialog.ui.label_Size.setText(f'Image size: \n{ll} \U000000D7 {h} pix.')
 
     def edit_size(self, regime):
         if self.save_image_dialog.ui.checkBox_lockAR.isChecked():
@@ -267,7 +275,7 @@ class MJSet(MyWindowMandelbrotJulia, FractalControls, CoordinateManager, JuliaPa
         self.application = application
         self.mode = DEFAULT_MODE
         self.horizon = DEFAULT_HORIZON_MANDELBROT
-        self.x_c_0, self.y_c_0 = -0.8000, -0.1560
+        self.x_c_0, self.y_c_0 = DEFAULT_X_C, DEFAULT_Y_C
         self.rho_c_0, self.phi_c_0 = polar_coordinates(self.x_c_0, self.y_c_0)
         self.x_c, self.y_c = self.x_c_0, self.y_c_0
         self.rho_c, self.phi_c = self.rho_c_0, self.phi_c_0
@@ -388,6 +396,9 @@ class MJSet(MyWindowMandelbrotJulia, FractalControls, CoordinateManager, JuliaPa
             (self.ui.pushButton_Reset, self.reset_im),
         ]:
             button.clicked.connect(action)
+
+    def closeEvent(self, event):
+        self.application.closeAllWindows()
 
 
 if __name__ == '__main__':

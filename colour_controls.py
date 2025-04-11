@@ -1,7 +1,7 @@
 import json
 
 from PySide6.QtCore import Qt, QPointF
-from PySide6.QtGui import QColor, QPainter, QBrush, QMouseEvent, QLinearGradient, QImage
+from PySide6.QtGui import QColor, QPainter, QBrush, QMouseEvent, QLinearGradient
 from PySide6.QtWidgets import QWidget, QColorDialog, QFileDialog
 from matplotlib import colors
 
@@ -137,20 +137,15 @@ class Gradient(QWidget):
         self.points.sort(key=lambda t: t[1])
         self.update()
 
-    def make_colourmap(self, steps=256):
-        gradient = self.make_gradient()
-        image = QImage(self.width(), self.height(), QImage.Format_RGB32)
-        painter = QPainter(image)  # draw an image and then scan its colours
-        painter.fillRect(image.rect(), gradient)
-        painter.end()
-
+    def make_colourmap(self):
         colours = []
-        for i in range(steps):
-            x = int(i / (steps - 1) * (self.width() - 1))
-            colour = image.pixelColor(x, self.height() // 2)
-            colours.append((colour.red() / 255.0, colour.green() / 255.0, colour.blue() / 255.0, 1.0))  # RGBA
-
-        return colors.ListedColormap(colours)
+        for _, pos, colour in self.points:
+            colours.append((pos, (colour.red() / 255.0, colour.green() / 255.0, colour.blue() / 255.0, 1.0)))  # RGBA
+        if colours[0][0] > 0.0:
+            colours.insert(0, (0.0, colours[0][1]))  # Reuse first colour
+        if colours[-1][0] < 1.0:
+            colours.append((1.0, colours[-1][1]))  # Reuse last colour
+        return colors.LinearSegmentedColormap.from_list(name='user_defined_cmap', colors=colours)
 
     def save_to_file(self, path):
         colours_data = []

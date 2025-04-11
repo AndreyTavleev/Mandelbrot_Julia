@@ -23,6 +23,8 @@ DEFAULT_LENGTH = 1000
 DEFAULT_REGIME = 'standard'
 DEFAULT_FREQ = 0.01
 DEFAULT_C_VIEW = 'xy'
+DEFAULT_X_C = -0.8000
+DEFAULT_Y_C = -0.1560
 DEFAULT_DELTA_SLIDER_C = 5e-4  # 2 / 4000 = (1 - (-1)) / 4000
 LIMS_MANDELBROT_DICT = {'2': (-2, 0.5, -1.25, 1.25), '3': (-1, 1, -1.25, 1.25),
                         '4': (-1.35, 1, -1.25, 1.25), '5': (-1, 1, -1, 1),

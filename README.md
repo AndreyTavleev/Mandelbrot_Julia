@@ -237,11 +237,15 @@ for high-quality output by choosing the `Save image` option
 or clicking the `💾` icon on the matplotlib toolbar
 under the image:
 * **Supported Formats**: PNG, JPEG, TIFF, PDF, and EPS.
-* **Customisation**: Specify dimensions (in inches) and 
-dots per inches (DPI) to control resolution and file size.
-Toggle `With Axes` to retain coordinate labels and ticks.
-Enable `Lock Aspect Ratio` to maintain current proportions
-when adjusting width or height. 
+* **Customisation**: Specify dimensions (in inches) to 
+control resolution and file size.
+Enable `Lock Aspect Ratio` to maintain the current 
+proportions when adjusting the width or height. 
+Toggle `With Axes` to retain coordinate labels and ticks. 
+In that case, you can also set the dots per inches (DPI) of 
+the image, which will affect the size of the axes — see
+[here](https://stackoverflow.com/a/47639545) for a 
+discussion on DPI.
 The image renders at the specified resolution, preserving 
 shading and colourmap preferences.
 
