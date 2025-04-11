@@ -187,7 +187,6 @@ class ImageExporter:
                 colourmap.append({'position': pos, 'r': colour.red() / 255.0,
                                   'g': colour.green() / 255.0, 'b': colour.blue() / 255.0})
             metadata['colourmap'] = colourmap
-            print(colourmap)
         else:
             metadata['colourmap'] = self.ui.comboBox_Colourmap.currentText()
         metadata['regime'] = self.regime

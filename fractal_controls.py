@@ -71,7 +71,6 @@ class FractalControls:
             data = light.shade(data, cmap=plt.get_cmap(self.colourmap), vert_exag=self.vert_exag,
                                blend_mode='hsv')
             im.set(data=data, extent=(xmin, xmax, ymin, ymax))
-        print('min, max =', im.get_array().min(), im.get_array().max(), '\n')
         im.set(clim=(im.get_array().min(), im.get_array().max()))
         self.fig.canvas.draw_idle()  # better than draw()
         self.fig.tight_layout()
@@ -83,7 +82,6 @@ class FractalControls:
             self.ui.lineEdit_N.setText(str(nn))
             return nn
         if self.slider_move:
-            print('slider moved')
             return self.ui.horizontalSlider_N.value()
         else:
             xmin, xmax, ymin, ymax = np.float64([*self.ax.get_xlim(), *self.ax.get_ylim()])
