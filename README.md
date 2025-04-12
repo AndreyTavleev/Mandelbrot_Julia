@@ -319,7 +319,7 @@ python3 zoom_animation.py
 
 The video has been compressed for README:
 
-https://github.com/user-attachments/assets/b6f3584d-e586-4d01-9979-5343ae6c0b84
+<https://github.com/user-attachments/assets/b6f3584d-e586-4d01-9979-5343ae6c0b84>
 
 ## Rotation
 
@@ -366,7 +366,7 @@ python3 rotate_animation.py --power 3 --xmin -1.5 --xmax 1.5 --ymin -1.5 --ymax 
 
 The video has been compressed for README:
 
-https://github.com/user-attachments/assets/8c3fb3a6-dcdc-4c38-8dbc-e173b8110aeb
+<https://github.com/user-attachments/assets/8c3fb3a6-dcdc-4c38-8dbc-e173b8110aeb>
 
 ## Gallery
 
