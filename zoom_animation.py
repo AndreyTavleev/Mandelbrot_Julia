@@ -43,7 +43,7 @@ def make_frame(i, scale, xmin_1, xmax_1, ymin_1, ymax_1, xmin_2, xmax_2, ymin_2,
     zoom = (xmax_1 - xmin_1) / (xmax_3 - xmin_3)
     n = int(100 * (1 + np.log10(zoom)))
 
-    print(f'Frame {i} / {frames}')
+    print(f'Frame {i + 1} / {frames}')
 
     data = mandelbrot_julia_set(xmin_3, xmax_3, ymin_3, ymax_3, horizon=horizon,
                                 length=length, height=height, n=n,
@@ -73,15 +73,24 @@ def validate_aspect_ratio(delta_x_1, delta_y_1, delta_x_2, delta_y_2, length, he
         print(f'Suggested delta_y_2 = {delta_x_2 * delta_y_1 / delta_x_1}')
         print(f'Or suggested delta_y_1 = {delta_x_1 * delta_y_2 / delta_x_2}')
         while True:
-            ans = input('Continue to draw with the current aspect ratio? [y/n] ')
-            if ans.lower() == 'y':
-                break
+            print('Do you want to adjust the aspect ratio based on the initial fractal [1], '
+                  'the final fractal [2], or continue with the current aspect ratio [n]?')
+            ans = input('Enter 1, 2 or n: ')
+            if ans == '1':
+                delta_y_2 = delta_x_2 * delta_y_1 / delta_x_1
+                height = int(float(length) * delta_y_1 / delta_x_1)
+                print(f'Aspect ratio and image size adjusted for the initial fractal')
+                return delta_x_1, delta_y_1, delta_x_2, delta_y_2, length, height
+            elif ans == '2':
+                delta_y_1 = delta_x_1 * delta_y_2 / delta_x_2
+                height = int(float(length) * delta_y_2 / delta_x_2)
+                print(f'Aspect ratio and image size adjusted for the final fractal')
+                return delta_x_1, delta_y_1, delta_x_2, delta_y_2, length, height
             elif ans.lower() == 'n':
-                return
+                return delta_x_1, delta_y_1, delta_x_2, delta_y_2, length, height
             else:
-                print('Please enter y or n.')
-                continue
-    return
+                print('Please enter 1, 2 or n.')
+    return delta_x_1, delta_y_1, delta_x_2, delta_y_2, length, height
 
 
 def generate_video(path, name, fps=30):
@@ -127,6 +136,8 @@ def main(metadata, x_centre_1, y_centre_1, delta_x_1, delta_y_1,
         ymin_2, ymax_2 = metadata['lims_y']
         delta_x_2 = xmax_2 - xmin_2
         delta_y_2 = ymax_2 - ymin_2
+        x_centre_2 = xmin_2 + delta_x_2 / 2
+        y_centre_2 = ymin_2 + delta_y_2 / 2
         mode = metadata['mode']
         if mode == 'julia':
             x_c = metadata['x_c']
@@ -147,18 +158,18 @@ def main(metadata, x_centre_1, y_centre_1, delta_x_1, delta_y_1,
             colourmap = metadata['colourmap']
         else:
             colourmap = make_colourmap(metadata['colourmap'])
-    else:
-        xmin_2 = x_centre_2 - delta_x_2 / 2
-        xmax_2 = x_centre_2 + delta_x_2 / 2
-        ymin_2 = y_centre_2 - delta_y_2 / 2
-        ymax_2 = y_centre_2 + delta_y_2 / 2
 
+    delta_x_1, delta_y_1, delta_x_2, delta_y_2, length, height = validate_aspect_ratio(
+        delta_x_1, delta_y_1, delta_x_2, delta_y_2, length, height)
     xmin_1 = x_centre_1 - delta_x_1 / 2
     xmax_1 = x_centre_1 + delta_x_1 / 2
     ymin_1 = y_centre_1 - delta_y_1 / 2
     ymax_1 = y_centre_1 + delta_y_1 / 2
 
-    validate_aspect_ratio(delta_x_1, delta_y_1, delta_x_2, delta_y_2, length, height)
+    xmin_2 = x_centre_2 - delta_x_2 / 2
+    xmax_2 = x_centre_2 + delta_x_2 / 2
+    ymin_2 = y_centre_2 - delta_y_2 / 2
+    ymax_2 = y_centre_2 + delta_y_2 / 2
 
     time0 = dt.now()
     scales = 1.0 - np.logspace(0, -50, frames, base=2, dtype=np.float64)

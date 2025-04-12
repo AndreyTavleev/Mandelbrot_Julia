@@ -34,8 +34,7 @@ def make_colourmap(colours_data):
 def make_frame(i, xmin, xmax, ymin, ymax, x_c, y_c, n, power, horizon, length, height,
                colourmap, regime, freq, shading, azdeg, altdeg, vert_exag, path, frames):
     """Generate a single frame for the animation."""
-    # print(scale, i, n)
-    print(f'Frame {i} / {frames}')
+    print(f'Frame {i + 1} / {frames}')
 
     data = mandelbrot_julia_set(xmin, xmax, ymin, ymax, horizon=horizon,
                                 length=length, height=height, n=n,
@@ -61,18 +60,19 @@ def validate_aspect_ratio(xmin, xmax, ymin, ymax, length, height):
         warnings.warn('The aspect ratio should remain the same for axes and image size.')
         print(f'Aspect ratio = {aspect_ratio:.3f}')
         print(f'L, H = {length}, {height}')
-        print(
-            f'Suggested L, H = {length}, {int(float(length) * aspect_ratio):g}')
+        print(f'Suggested L, H = {length}, {int(float(length) * aspect_ratio):g}')
+        print('Do you want to adjust the aspect ratio [y] or continue with the current one [n]?')
         while True:
-            ans = input('Continue to draw with the current aspect ratio? [y/n] ')
+            ans = input('Enter y or n: ')
             if ans.lower() == 'y':
-                break
+                height = int(float(length) * aspect_ratio)
+                return length, height
             elif ans.lower() == 'n':
-                return
+                print('Continuing with the current aspect ratio.')
+                return length, height
             else:
-                print('Please enter y or n.')
                 continue
-    return
+    return length, height
 
 
 def generate_video(path, name, fps=30):
@@ -81,8 +81,7 @@ def generate_video(path, name, fps=30):
 
     # List of PNG files
     files = glob.glob(path + 'image_*.png')
-    image_files = sorted(files, key=lambda x: int(
-        re.search(r'\d+', x[len(path):]).group()))
+    image_files = sorted(files, key=lambda x: int(re.search(r'\d+', x[len(path):]).group()))
 
     # Read first image to get dimensions
     frame = cv2.imread(image_files[0])
@@ -139,7 +138,7 @@ def main(metadata, xmin, xmax, ymin, ymax, rho, phi_min, phi_max, n, power,
         else:
             colourmap = make_colourmap(metadata['colourmap'])
 
-    validate_aspect_ratio(xmin, xmax, ymin, ymax, length, height)
+    length, height = validate_aspect_ratio(xmin, xmax, ymin, ymax, length, height)
 
     time0 = dt.now()
     angle = np.linspace(phi_min, phi_max, frames)
