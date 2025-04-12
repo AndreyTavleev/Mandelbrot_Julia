@@ -11,7 +11,7 @@ from matplotlib import colors
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
 
-from Mandelbrot_Julia import mandelbrot_julia_set
+from fractal_calculation import mandelbrot_julia_set
 from colour_controls import ColourManager
 from config import *
 from fractal_controls import (FractalControls, JuliaParameterControl, ImageRenderer,

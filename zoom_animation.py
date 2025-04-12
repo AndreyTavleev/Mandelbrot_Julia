@@ -12,7 +12,7 @@ import numpy as np
 from matplotlib import colors
 
 import config as cfg
-from Mandelbrot_Julia import mandelbrot_julia_set
+from fractal_calculation import mandelbrot_julia_set
 
 
 def make_colourmap(colours_data):

@@ -5,7 +5,7 @@ from PySide6.QtCore import QSize
 from matplotlib import colors
 from matplotlib import pyplot as plt
 
-from Mandelbrot_Julia import mandelbrot_julia_set
+from fractal_calculation import mandelbrot_julia_set
 from config import *
 from ui_form_setLimits import Ui_setLimits
 from ui_form_setC import Ui_setC
