@@ -17,6 +17,7 @@ from Mandelbrot_Julia import mandelbrot_julia_set
 
 
 def make_colourmap(colours_data):
+    """Create a custom colourmap from a list of colour data."""
     colours = []
     for pos, colour in colours_data:
         r = round(float(colour['r']))
@@ -34,6 +35,7 @@ def make_colourmap(colours_data):
 def make_frame(i, scale, xmin_1, xmax_1, ymin_1, ymax_1, xmin_2, xmax_2, ymin_2, ymax_2,
                mode, x_c, y_c, power, horizon, length, height, colourmap, regime, freq,
                shading, azdeg, altdeg, vert_exag, path, frames):
+    """Generate a single frame for the zoom animation."""
     xmin_3 = (1 - scale) * xmin_1 + scale * xmin_2
     ymin_3 = (1 - scale) * ymin_1 + scale * ymin_2
     xmax_3 = (1 - scale) * xmax_1 + scale * xmax_2
@@ -56,16 +58,68 @@ def make_frame(i, scale, xmin_1, xmax_1, ymin_1, ymax_1, xmin_2, xmax_2, ymin_2,
         light = colors.LightSource(azdeg=azdeg, altdeg=altdeg)
         data = light.shade(data, cmap=plt.get_cmap(colourmap), vert_exag=vert_exag,
                            blend_mode='hsv')
-        plt.imsave(path + f'image_{i:d}.png', data, origin='lower')
-    else:
-        plt.imsave(path + f'image_{i:d}.png', data, cmap=colourmap, origin='lower')
+    plt.imsave(path + f'image_{i:d}.png', data,
+               cmap=colourmap if not shading else None, origin='lower')
     return
+
+
+def validate_aspect_ratio(delta_x_1, delta_y_1, delta_x_2, delta_y_2, length, height):
+    """Validate the aspect ratio of the image."""
+    if not np.isclose(delta_y_1 / delta_x_1, delta_y_2 / delta_x_2, atol=0.05):
+        warnings.warn('The aspect ratio should remain the same between the initial and final frames.')
+        print(f'Initial aspect ratio delta_y / delta_x = {delta_y_1 / delta_x_1:.3f}')
+        print('Final aspect ratio delta_y / delta_x =', delta_y_2 / delta_x_2)
+        print(f'L, H = {length}, {height}')
+        print(f'Suggested L, H = {length}, {int(float(length) * delta_y_1 / delta_x_1):g} or '
+              f'{length}, {int(float(length) * delta_y_2 / delta_x_2):g}')
+        print(f'Suggested delta_y_2 = {delta_x_2 * delta_y_1 / delta_x_1}')
+        print(f'Or suggested delta_y_1 = {delta_x_1 * delta_y_2 / delta_x_2}')
+        while True:
+            ans = input('Continue to draw with the current aspect ratio? [y/n] ')
+            if ans.lower() == 'y':
+                break
+            elif ans.lower() == 'n':
+                return
+            else:
+                print('Please enter y or n.')
+                continue
+    return
+
+
+def generate_video(path, name, fps=30):
+    """Generate a video from the saved frames."""
+    import cv2
+
+    # List of PNG files
+    files = glob.glob(path + 'image_*.png')
+    image_files = sorted(files, key=lambda x: int(
+        re.search(r'\d+', x[len(path):]).group()))
+
+    # Read first image to get dimensions
+    frame = cv2.imread(image_files[0])
+    h, w, _ = frame.shape
+
+    if not name:
+        name = 'output.mp4'
+    if name[-4:] != '.mp4':
+        name += '.mp4'
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Codec for mp4 format
+    out = cv2.VideoWriter(path + name, fourcc, fps, (w, h))
+
+    # Write images to video
+    for img_file in image_files:
+        frame = cv2.imread(img_file)  # Read image
+        out.write(frame)  # Write frame
+
+    out.release()  # Save and close file
+    print(f"Video saved as {path}{name}")
 
 
 def main(metadata, x_centre_1, y_centre_1, delta_x_1, delta_y_1,
          x_centre_2, y_centre_2, delta_x_2, delta_y_2, x_c, y_c,
          mode, power, horizon, frames, length, height, colourmap,
          regime, freq, shading, azdeg, altdeg, vert_exag, threads, path):
+    """Main function to generate the zoom animation."""
     if not isinstance(colourmap, str):
         colourmap = make_colourmap(colourmap)
     if metadata:
@@ -106,24 +160,7 @@ def main(metadata, x_centre_1, y_centre_1, delta_x_1, delta_y_1,
     ymin_1 = y_centre_1 - delta_y_1 / 2
     ymax_1 = y_centre_1 + delta_y_1 / 2
 
-    if not np.isclose(delta_y_1 / delta_x_1, delta_y_2 / delta_x_2, atol=0.05):
-        warnings.warn('The aspect ratio should remain the same between the initial and final frames.')
-        print(f'Initial aspect ratio delta_y / delta_x = {delta_y_1 / delta_x_1:.3f}')
-        print('Final aspect ratio delta_y / delta_x =', delta_y_2 / delta_x_2)
-        print(f'L, H = {length}, {height}')
-        print(f'Suggested L, H = {length}, {int(float(length) * delta_y_1 / delta_x_1):g} or '
-              f'{length}, {int(float(length) * delta_y_2 / delta_x_2):g}')
-        print(f'Suggested delta_y_2 = {delta_x_2 * delta_y_1 / delta_x_1}')
-        print(f'Or suggested delta_y_1 = {delta_x_1 * delta_y_2 / delta_x_2}')
-        while True:
-            ans = input('Continue to draw with the current aspect ratio? [y/n] ')
-            if ans.lower() == 'y':
-                break
-            elif ans.lower() == 'n':
-                return
-            else:
-                print('Please enter y or n.')
-                continue
+    validate_aspect_ratio(delta_x_1, delta_y_1, delta_x_2, delta_y_2, length, height)
 
     time0 = dt.now()
     scales = 1.0 - np.logspace(0, -50, frames, base=2, dtype=np.longdouble)
@@ -216,30 +253,6 @@ if __name__ == '__main__':
         path += '/'
     os.makedirs(path, exist_ok=True)
     main(**vars(args), path=path)
-    name = input('Enter the name for the video (default: output.mp4): ')
+    video_name = input('Enter the name for the video (default: output.mp4): ')
 
-    import cv2
-
-    # List of PNG files
-    files = glob.glob(path + 'image_*.png')
-    image_files = sorted(files, key=lambda x: int(re.search(r'\d+', x[len(path):]).group()))
-
-    # Read first image to get dimensions
-    frame = cv2.imread(image_files[0])
-    h, w, _ = frame.shape
-
-    if not name:
-        name = 'output.mp4'
-    if name[-4:] != '.mp4':
-        name += '.mp4'
-    fps = 30  # Frame rate
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Codec for mp4 format
-    out = cv2.VideoWriter(path + name, fourcc, fps, (w, h))
-
-    # Write images to video
-    for img_file in image_files:
-        frame = cv2.imread(img_file)  # Read image
-        out.write(frame)  # Write frame
-
-    out.release()  # Save and close file
-    print(f"Video saved as {path}{name}")
+    generate_video(path, video_name)

@@ -16,6 +16,7 @@ from Mandelbrot_Julia import mandelbrot_julia_set
 
 
 def make_colourmap(colours_data):
+    """Create a custom colourmap from a list of colour data."""
     colours = []
     for pos, colour in colours_data:
         r = round(float(colour['r']))
@@ -32,6 +33,7 @@ def make_colourmap(colours_data):
 
 def make_frame(i, xmin, xmax, ymin, ymax, x_c, y_c, n, power, horizon, length, height,
                colourmap, regime, freq, shading, azdeg, altdeg, vert_exag, path, frames):
+    """Generate a single frame for the animation."""
     # print(scale, i, n)
     print(f'Frame {i} / {frames}')
 
@@ -46,16 +48,66 @@ def make_frame(i, xmin, xmax, ymin, ymax, x_c, y_c, n, power, horizon, length, h
         light = colors.LightSource(azdeg=azdeg, altdeg=altdeg)
         data = light.shade(data, cmap=plt.get_cmap(colourmap), vert_exag=vert_exag,
                            blend_mode='hsv')
-        plt.imsave(path + f'image_{i:d}.png', data, origin='lower')
-    else:
-        plt.imsave(path + f'image_{i:d}.png', data,
-                   cmap=colourmap, origin='lower')
+    plt.imsave(path + f'image_{i:d}.png', data,
+               cmap=colourmap if not shading else None, origin='lower')
     return
+
+
+def validate_aspect_ratio(xmin, xmax, ymin, ymax, length, height):
+    """Validate the aspect ratio of the image."""
+    aspect_ratio = (ymax - ymin) / (xmax - xmin)
+    expected_aspect_ratio = height / length
+    if not np.isclose(aspect_ratio, expected_aspect_ratio, atol=0.05):
+        warnings.warn('The aspect ratio should remain the same for axes and image size.')
+        print(f'Aspect ratio = {aspect_ratio:.3f}')
+        print(f'L, H = {length}, {height}')
+        print(
+            f'Suggested L, H = {length}, {int(float(length) * aspect_ratio):g}')
+        while True:
+            ans = input('Continue to draw with the current aspect ratio? [y/n] ')
+            if ans.lower() == 'y':
+                break
+            elif ans.lower() == 'n':
+                return
+            else:
+                print('Please enter y or n.')
+                continue
+    return
+
+
+def generate_video(path, name, fps=30):
+    """Generate a video from the saved frames."""
+    import cv2
+
+    # List of PNG files
+    files = glob.glob(path + 'image_*.png')
+    image_files = sorted(files, key=lambda x: int(
+        re.search(r'\d+', x[len(path):]).group()))
+
+    # Read first image to get dimensions
+    frame = cv2.imread(image_files[0])
+    h, w, _ = frame.shape
+
+    if not name:
+        name = 'output.mp4'
+    if name[-4:] != '.mp4':
+        name += '.mp4'
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Codec for mp4 format
+    out = cv2.VideoWriter(path + name, fourcc, fps, (w, h))
+
+    # Write images to video
+    for img_file in image_files:
+        frame = cv2.imread(img_file)  # Read image
+        out.write(frame)  # Write frame
+
+    out.release()  # Save and close file
+    print(f"Video saved as {path}{name}")
 
 
 def main(metadata, xmin, xmax, ymin, ymax, rho, phi_min, phi_max, n, power,
          horizon, frames, length, height, colourmap,
          regime, freq, shading, azdeg, altdeg, vert_exag, threads, path):
+    """Main function to generate the rotational animation of a Julia set."""
     if not isinstance(colourmap, str):
         colourmap = make_colourmap(colourmap)
     if metadata:
@@ -76,11 +128,9 @@ def main(metadata, xmin, xmax, ymin, ymax, rho, phi_min, phi_max, n, power,
         power = metadata['power']
         shading = metadata['shading']
         if shading:
-            azdeg = metadata['azdeg']
-            altdeg = metadata['altdeg']
+            azdeg = max(0.0, min(360.0, metadata['azdeg']))
+            altdeg = max(0.0, min(90.0, metadata['altdeg']))
             vert_exag = metadata['vert_exag']
-            azdeg = max(0.0, min(360.0, azdeg))
-            altdeg = max(0.0, min(90.0, altdeg))
         regime = metadata['regime']
         if regime == 'sin':
             freq = metadata['freq']
@@ -89,21 +139,7 @@ def main(metadata, xmin, xmax, ymin, ymax, rho, phi_min, phi_max, n, power,
         else:
             colourmap = make_colourmap(metadata['colourmap'])
 
-    if not np.isclose((ymax - ymin) / (xmax - xmin), height / length, atol=0.05):
-        warnings.warn('The aspect ratio should remain the same for axes and image size.')
-        print(f'Aspect ratio = {(ymax - ymin) / (xmax - xmin):.3f}')
-        print(f'L, H = {length}, {height}')
-        print(
-            f'Suggested L, H = {length}, {int(float(length) * (ymax - ymin) / (xmax - xmin)):g}')
-        while True:
-            ans = input('Continue to draw with the current aspect ratio? [y/n] ')
-            if ans.lower() == 'y':
-                break
-            elif ans.lower() == 'n':
-                return
-            else:
-                print('Please enter y or n.')
-                continue
+    validate_aspect_ratio(xmin, xmax, ymin, ymax, length, height)
 
     time0 = dt.now()
     angle = np.linspace(phi_min, phi_max, frames)
@@ -188,31 +224,6 @@ if __name__ == '__main__':
         path += '/'
     os.makedirs(path, exist_ok=True)
     main(**vars(args), path=path)
-    name = input('Enter the name for the video (default: output.mp4): ')
+    video_name = input('Enter the name for the video (default: output.mp4): ')
 
-    import cv2
-
-    # List of PNG files
-    files = glob.glob(path + 'image_*.png')
-    image_files = sorted(files, key=lambda x: int(
-        re.search(r'\d+', x[len(path):]).group()))
-
-    # Read first image to get dimensions
-    frame = cv2.imread(image_files[0])
-    h, w, _ = frame.shape
-
-    if not name:
-        name = 'output.mp4'
-    if name[-4:] != '.mp4':
-        name += '.mp4'
-    fps = 30  # Frame rate
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Codec for mp4 format
-    out = cv2.VideoWriter(path + name, fourcc, fps, (w, h))
-
-    # Write images to video
-    for img_file in image_files:
-        frame = cv2.imread(img_file)  # Read image
-        out.write(frame)  # Write frame
-
-    out.release()  # Save and close file
-    print(f"Video saved as {path}{name}")
+    generate_video(path, video_name)
