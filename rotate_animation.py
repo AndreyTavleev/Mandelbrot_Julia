@@ -1,7 +1,6 @@
 import argparse
 import glob
 import json
-import math
 import multiprocessing as mp
 import os
 import re
@@ -31,23 +30,14 @@ def make_colourmap(colours_data):
     return colourmap
 
 
-def make_frame(i, scale, xmin_1, xmax_1, ymin_1, ymax_1, xmin_2, xmax_2, ymin_2, ymax_2,
-               mode, x_c, y_c, power, horizon, length, height, colourmap, regime, freq,
-               shading, azdeg, altdeg, vert_exag, path, frames):
-    xmin_3 = (1 - scale) * xmin_1 + scale * xmin_2
-    ymin_3 = (1 - scale) * ymin_1 + scale * ymin_2
-    xmax_3 = (1 - scale) * xmax_1 + scale * xmax_2
-    ymax_3 = (1 - scale) * ymax_1 + scale * ymax_2
-
-    zoom = (xmax_1 - xmin_1) / (xmax_3 - xmin_3)
-    n = int(100 * (1 + math.log10(zoom)))
-
+def make_frame(i, xmin, xmax, ymin, ymax, x_c, y_c, n, power, horizon, length, height,
+               colourmap, regime, freq, shading, azdeg, altdeg, vert_exag, path, frames):
     # print(scale, i, n)
     print(f'Frame {i} / {frames}')
 
-    data = mandelbrot_julia_set(xmin_3, xmax_3, ymin_3, ymax_3, horizon=horizon,
+    data = mandelbrot_julia_set(xmin, xmax, ymin, ymax, horizon=horizon,
                                 length=length, height=height, n=n,
-                                x_c=x_c, y_c=y_c, power=power, mode=mode)[2].T
+                                x_c=x_c, y_c=y_c, power=power, mode='julia')[2].T
     if regime == 'standard':
         pass
     elif regime == 'sin':
@@ -58,27 +48,30 @@ def make_frame(i, scale, xmin_1, xmax_1, ymin_1, ymax_1, xmin_2, xmax_2, ymin_2,
                            blend_mode='hsv')
         plt.imsave(path + f'image_{i:d}.png', data, origin='lower')
     else:
-        plt.imsave(path + f'image_{i:d}.png', data, cmap=colourmap, origin='lower')
+        plt.imsave(path + f'image_{i:d}.png', data,
+                   cmap=colourmap, origin='lower')
     return
 
 
-def main(metadata, x_centre_1, y_centre_1, delta_x_1, delta_y_1,
-         x_centre_2, y_centre_2, delta_x_2, delta_y_2, x_c, y_c,
-         mode, power, horizon, frames, length, height, colourmap,
+def main(metadata, xmin, xmax, ymin, ymax, rho, phi_min, phi_max, n, power,
+         horizon, frames, length, height, colourmap,
          regime, freq, shading, azdeg, altdeg, vert_exag, threads, path):
     if not isinstance(colourmap, str):
         colourmap = make_colourmap(colourmap)
     if metadata:
         with open(metadata, 'r') as f:
             metadata = json.load(f)
-        xmin_2, xmax_2 = metadata['lims_x']
-        ymin_2, ymax_2 = metadata['lims_y']
-        delta_x_2 = xmax_2 - xmin_2
-        delta_y_2 = ymax_2 - ymin_2
+        xmin, xmax = metadata['lims_x']
+        ymin, ymax = metadata['lims_y']
         mode = metadata['mode']
         if mode == 'julia':
-            x_c = metadata['x_c']
-            y_c = metadata['y_c']
+            rho = np.sqrt(metadata['x_c'] ** 2 + metadata['y_c'] ** 2)
+        else:
+            if rho:
+                warnings.warn("Metadata file contains Mandelbrot set. The 'rho' parameter "
+                              "has been set separately by user.")
+            else:
+                warnings.warn("Metadata file contains Mandelbrot set. Use default 'rho' parameter.")
         horizon = metadata['horizon']
         power = metadata['power']
         shading = metadata['shading']
@@ -95,26 +88,13 @@ def main(metadata, x_centre_1, y_centre_1, delta_x_1, delta_y_1,
             colourmap = metadata['colourmap']
         else:
             colourmap = make_colourmap(metadata['colourmap'])
-    else:
-        xmin_2 = x_centre_2 - delta_x_2 / 2
-        xmax_2 = x_centre_2 + delta_x_2 / 2
-        ymin_2 = y_centre_2 - delta_y_2 / 2
-        ymax_2 = y_centre_2 + delta_y_2 / 2
 
-    xmin_1 = x_centre_1 - delta_x_1 / 2
-    xmax_1 = x_centre_1 + delta_x_1 / 2
-    ymin_1 = y_centre_1 - delta_y_1 / 2
-    ymax_1 = y_centre_1 + delta_y_1 / 2
-
-    if not np.isclose(delta_y_1 / delta_x_1, delta_y_2 / delta_x_2, atol=0.05):
-        warnings.warn('The aspect ratio should remain the same between the initial and final frames.')
-        print(f'Initial aspect ratio delta_y / delta_x = {delta_y_1 / delta_x_1:.3f}')
-        print('Final aspect ratio delta_y / delta_x =', delta_y_2 / delta_x_2)
+    if not np.isclose((ymax - ymin) / (xmax - xmin), height / length, atol=0.05):
+        warnings.warn('The aspect ratio should remain the same for axes and image size.')
+        print(f'Aspect ratio = {(ymax - ymin) / (xmax - xmin):.3f}')
         print(f'L, H = {length}, {height}')
-        print(f'Suggested L, H = {length}, {int(float(length) * delta_y_1 / delta_x_1):g} or '
-              f'{length}, {int(float(length) * delta_y_2 / delta_x_2):g}')
-        print(f'Suggested delta_y_2 = {delta_x_2 * delta_y_1 / delta_x_1}')
-        print(f'Or suggested delta_y_1 = {delta_x_1 * delta_y_2 / delta_x_2}')
+        print(
+            f'Suggested L, H = {length}, {int(float(length) * (ymax - ymin) / (xmax - xmin)):g}')
         while True:
             ans = input('Continue to draw with the current aspect ratio? [y/n] ')
             if ans.lower() == 'y':
@@ -126,13 +106,18 @@ def main(metadata, x_centre_1, y_centre_1, delta_x_1, delta_y_1,
                 continue
 
     time0 = dt.now()
-    scales = 1.0 - np.logspace(0, -50, frames, base=2, dtype=np.longdouble)
+    angle = np.linspace(phi_min, phi_max, frames)
+    x_c = rho * np.sin(angle)
+    y_c = rho * np.cos(angle)
     pool = mp.Pool(threads)
-    result = [pool.apply_async(make_frame, args=(i, scale, xmin_1, xmax_1, ymin_1, ymax_1, xmin_2, xmax_2,
-                                                 ymin_2, ymax_2, mode, x_c, y_c, power, horizon, length, height,
-                                                 colourmap, regime, freq, shading, azdeg, altdeg, vert_exag, path,
-                                                 frames))
-              for i, scale in enumerate(scales)]
+
+    result = [pool.apply_async(make_frame, kwds={'i': i, 'xmin': xmin, 'xmax': xmax, 'ymin': ymin, 'ymax': ymax,
+                                                 'x_c': x_cc, 'y_c': y_cc, 'n': n, 'power': power,
+                                                 'horizon': horizon, 'length': length, 'height': height,
+                                                 'colourmap': colourmap, 'regime': regime, 'freq': freq,
+                                                 'shading': shading, 'azdeg': azdeg, 'altdeg': altdeg,
+                                                 'vert_exag': vert_exag, 'path': path, 'frames': frames})
+              for i, (x_cc, y_cc) in enumerate(zip(x_c, y_c))]
 
     im_arr = [res.get() for res in result]
     pool.close()
@@ -142,43 +127,35 @@ def main(metadata, x_centre_1, y_centre_1, delta_x_1, delta_y_1,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='Creates a zoom animation of a fractal (Mandelbrot or Julia set), '
+        description='Creates a rotational animation of a Julia set, '
                     'with optional shading, colour mapping, and custom calculation and view parameters.',
         epilog='For further information, see the README.md.')
     parser.add_argument('--metadata', type=str,
                         help='Path to the JSON metadata file for loading the fractal configurations. '
-                             'The coordinates of the final fractal, fractal calculation parameters '
+                             'The coordinates of the fractal, fractal calculation parameters '
                              'and colour settings will be loaded from this file.')
-    parser.add_argument('--x_centre_1', type=np.float64, default=-0.75,
-                        help='X-coordinate of the centre for the initial fractal (default: -0.75).')
-    parser.add_argument('--y_centre_1', type=np.float64, default=0.0,
-                        help='Y-coordinate of the centre for the initial fractal (default: 0.0).')
-    parser.add_argument('--delta_x_1', type=np.float64, default=2.5,
-                        help='Length of the initial view in the X direction (default: 2.5).')
-    parser.add_argument('--delta_y_1', type=np.float64, default=2.5,
-                        help='Height of the initial view in the Y direction (default: 2.5).')
-    parser.add_argument('--x_centre_2', type=np.float64, default=-0.7380470008824890,
-                        help='X-coordinate of the centre for a zoomed-in fractal (default: 0.7380470008824890).')
-    parser.add_argument('--y_centre_2', type=np.float64, default=0.1521486399947802,
-                        help='Y-coordinate of the centre for a zoomed-in fractal (default: 0.1521486399947802).')
-    parser.add_argument('--delta_x_2', type=np.float64, default=0.0000000000008533,
-                        help='Length of the final zoomed view in the X direction (default: 0.0000000000008533).')
-    parser.add_argument('--delta_y_2', type=np.float64, default=0.0000000000008533,
-                        help='Height of the final zoomed view in the Y direction (default: 0.0000000000008533).')
-    parser.add_argument('--x_c', type=float, default=cfg.DEFAULT_X_C,
-                        help=f'Real part of the Julia set C-parameter (default: {cfg.DEFAULT_X_C}).')
-    parser.add_argument('--y_c', type=float, default=cfg.DEFAULT_Y_C,
-                        help=f'Imaginary part of the Julia set C-parameter (default: {cfg.DEFAULT_Y_C}).')
-    parser.add_argument('-m', '--mode', type=str, default=cfg.DEFAULT_MODE,
-                        choices=['mandelbrot', 'julia'],
-                        help=f"The fractal type: 'mandelbrot' or 'julia' (default: {cfg.DEFAULT_MODE}).")
+    parser.add_argument('--xmin', type=np.float64, default=-2.0,
+                        help='X-axis left bound (default: -2.0).')
+    parser.add_argument('--xmax', type=np.float64, default=2.0,
+                        help='X-axis right bound (default: 2.0).')
+    parser.add_argument('--ymin', type=np.float64, default=-2.0,
+                        help='Y-axis left bound (default: -2.0).')
+    parser.add_argument('--ymax', type=np.float64, default=2.0,
+                        help='Y-axis right bound (default: 2.0).')
+    parser.add_argument('--rho', type=float, default=0.788,
+                        help=f"Modulus 'rho' of the Julia set C-parameter (default: 0.788).")
+    parser.add_argument('--phi_min', type=float, default=0.0,
+                        help=f"Minimum argument 'phi' of the Julia set C-parameter (default: 0.0).")
+    parser.add_argument('--phi_max', type=float, default=2 * np.pi,
+                        help=f"Maximum argument 'phi' of the Julia set C-parameter (default: 2pi).")
+    parser.add_argument('--n', type=float, default=100,
+                        help=f"Iteration limit for the fractal calculation (default: 100).")
     parser.add_argument('-p', '--power', type=int, default=cfg.DEFAULT_POWER,
                         choices=[2, 3, 4, 5, 6, 7, 8],
                         help=f'Power/exponent used in the fractal formula: 2...8 (default: {cfg.DEFAULT_POWER}).')
-    parser.add_argument('-H', '--horizon', type=np.float64,
+    parser.add_argument('-H', '--horizon', type=np.float64, default=cfg.DEFAULT_HORIZON_JULIA,
                         help=f'Divergence threshold (horizon) for the fractal calculation. '
-                             f'(default: {cfg.DEFAULT_HORIZON_MANDELBROT} for mandelbrot and'
-                             f'{cfg.DEFAULT_HORIZON_JULIA} for julia).')
+                             f'(default: {cfg.DEFAULT_HORIZON_JULIA}).')
     parser.add_argument('-f', '--frames', type=int, default=400,
                         help='Number of frames to render for the animation (default: 400).')
     parser.add_argument('-l', '--length', type=int, default=cfg.DEFAULT_LENGTH,
@@ -204,11 +181,6 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--threads', type=int, default=mp.cpu_count() - 2,
                         help='Number of threads to use for frame creation (default: number of CPU cores - 2).')
     args = parser.parse_args()
-    if args.horizon is None:
-        if args.mode == 'mandelbrot':
-            args.horizon = cfg.DEFAULT_HORIZON_MANDELBROT
-        else:
-            args.horizon = cfg.DEFAULT_HORIZON_JULIA
     path = input('Enter the path to the folder where the frames and video will be saved (default: tmp/): ')
     if not path:
         path = 'tmp/'
@@ -222,7 +194,8 @@ if __name__ == '__main__':
 
     # List of PNG files
     files = glob.glob(path + 'image_*.png')
-    image_files = sorted(files, key=lambda x: int(re.search(r'\d+', x[len(path):]).group()))
+    image_files = sorted(files, key=lambda x: int(
+        re.search(r'\d+', x[len(path):]).group()))
 
     # Read first image to get dimensions
     frame = cv2.imread(image_files[0])

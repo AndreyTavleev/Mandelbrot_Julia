@@ -33,6 +33,7 @@ parameters, customise colours and save the generated images.
 * [Saving and loading](#saving-and-loading)
 * [Animations](#animations)
   * [Zooming](#zooming)
+  * [Rotation](#rotation)
 * [Gallery](#gallery)
 
 ## Installation
@@ -261,13 +262,20 @@ To load a previously saved fractal, choose the
 
 ## Animations
 
+Both the zoom and rotation scripts require the `opencv-python` 
+package to be installed:
+
+``` shell
+pip3 install opencv-python
+```
+
 ### Zooming
 The script `zoom_animation.py` generates a smooth zoom animation 
 of a fractal — either the Mandelbrot set or a Julia set. It supports
 numerous customisation options, which are described via the `--help` flag:
 
 ``` shell
-$ python3 zoom_animation.py --help
+python3 zoom_animation.py --help
 usage: zoom_animation.py [-h] [--metadata METADATA] [--x_centre_1 X_CENTRE_1]
                          [--y_centre_1 Y_CENTRE_1] [--delta_x_1 DELTA_X_1]
                          [--delta_y_1 DELTA_Y_1] [--x_centre_2 X_CENTRE_2]
@@ -285,6 +293,8 @@ the initial and final fractals, along with the widths of the
 X- and Y-axes for both views. Alternatively, you may provide 
 a previously saved `metadata.json` file to set the final 
 fractal's coordinates and other calculation and colouring options.
+You can also use a previously saved `colourmap.json` file 
+to set the custom colourmap.
 
 **Note**: The aspect ratios of the initial and final frames 
 should match. You can ensure this by adjusting the axis widths 
@@ -295,12 +305,58 @@ but can still generate a video using the current aspect ratio.
 Below is an example video created with the default values for all flags:
 
 ``` shell
-$ python3 zoom_animation.py
+python3 zoom_animation.py
 ```
 
 The video has been compressed for README:
 
 https://github.com/user-attachments/assets/b6f3584d-e586-4d01-9979-5343ae6c0b84
+
+## Rotation
+
+The script `rotate_animation.py` generates a smooth rotational animation 
+of a Julia set, in which the angle (argument $\varphi$) of the complex 
+parameter $C=\rho e^{\varphi}$ varies over time, tracing a circular 
+path in the complex plane. The result is a visually striking 
+transformation of the Julia set as it rotates through the parameter space.
+It supports numerous customisation options, which are described 
+via the `--help` flag:
+
+``` shell
+python3 rotate_animation.py --help
+usage: rotate_animation.py [-h] [--metadata METADATA] [--xmin XMIN]
+                           [--xmax XMAX] [--ymin YMIN] [--ymax YMAX]
+                           [--rho RHO] [--phi_min PHI_MIN] [--phi_max PHI_MAX]
+                           [--n N] [-p {2,3,4,5,6,7,8}] [-H HORIZON]
+                           [-f FRAMES] [-l LENGTH] [-hei HEIGHT]
+                           [-c COLOURMAP] [-r {standard,sin}] [-fr FREQ] [-s]
+                           [-az AZDEG] [-al ALTDEG] [-ve VERT_EXAG]
+                           [-t THREADS]
+...description...
+```
+
+The primary input parameters are the bounds of the X- and Y-axes,
+the modulus $\rho$ of the Julia set C-parameter, and the minimum
+and maximum values of the argument $\varphi$.
+Alternatively, you may provide a previously saved `metadata.json` 
+file to set the fractal's coordinates and other calculation and 
+colouring options. You can also use a previously 
+saved `colourmap.json` file to set the custom colourmap.
+
+**Note**: The aspect ratio of the axes and image size
+should match. You can ensure this by adjusting the axis widths 
+and the image's length and height accordingly. If the aspect 
+ratios differ, the script will suggest possible corrections, 
+but can still generate a video using the current aspect ratio.
+
+Below is an example video created using the following flag:
+
+``` shell
+python3 rotate_animation.py --power 3
+```
+
+The video has been compressed for README:
+
 
 ## Gallery
 Overall, have fun! Some screenshots with 
