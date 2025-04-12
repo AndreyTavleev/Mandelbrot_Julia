@@ -352,11 +352,12 @@ but can still generate a video using the current aspect ratio.
 Below is an example video created using the following flag:
 
 ``` shell
-python3 rotate_animation.py --power 3
+python3 rotate_animation.py --power 3 --xmin -1.5 --xmax 1.5 --ymin -1.5 --ymax 1.5
 ```
 
 The video has been compressed for README:
 
+https://github.com/user-attachments/assets/8c3fb3a6-dcdc-4c38-8dbc-e173b8110aeb
 
 ## Gallery
 Overall, have fun! Some screenshots with 
