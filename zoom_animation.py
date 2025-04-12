@@ -1,7 +1,6 @@
 import argparse
 import glob
 import json
-import math
 import multiprocessing as mp
 import os
 import re
@@ -42,9 +41,8 @@ def make_frame(i, scale, xmin_1, xmax_1, ymin_1, ymax_1, xmin_2, xmax_2, ymin_2,
     ymax_3 = (1 - scale) * ymax_1 + scale * ymax_2
 
     zoom = (xmax_1 - xmin_1) / (xmax_3 - xmin_3)
-    n = int(100 * (1 + math.log10(zoom)))
+    n = int(100 * (1 + np.log10(zoom)))
 
-    # print(scale, i, n)
     print(f'Frame {i} / {frames}')
 
     data = mandelbrot_julia_set(xmin_3, xmax_3, ymin_3, ymax_3, horizon=horizon,
@@ -163,7 +161,7 @@ def main(metadata, x_centre_1, y_centre_1, delta_x_1, delta_y_1,
     validate_aspect_ratio(delta_x_1, delta_y_1, delta_x_2, delta_y_2, length, height)
 
     time0 = dt.now()
-    scales = 1.0 - np.logspace(0, -50, frames, base=2, dtype=np.longdouble)
+    scales = 1.0 - np.logspace(0, -50, frames, base=2, dtype=np.float64)
     pool = mp.Pool(threads)
     result = [pool.apply_async(make_frame, args=(i, scale, xmin_1, xmax_1, ymin_1, ymax_1, xmin_2, xmax_2,
                                                  ymin_2, ymax_2, mode, x_c, y_c, power, horizon, length, height,

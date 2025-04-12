@@ -2,3 +2,4 @@ matplotlib
 numba
 numpy
 PySide6>6.5
+opencv-python

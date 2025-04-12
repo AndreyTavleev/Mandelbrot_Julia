@@ -179,13 +179,13 @@ if __name__ == '__main__':
     parser.add_argument('--ymax', type=np.float64, default=2.0,
                         help='Y-axis right bound (default: 2.0).')
     parser.add_argument('--rho', type=float, default=0.788,
-                        help=f"Modulus 'rho' of the Julia set C-parameter (default: 0.788).")
+                        help="Modulus 'rho' of the Julia set C-parameter (default: 0.788).")
     parser.add_argument('--phi_min', type=float, default=0.0,
-                        help=f"Minimum argument 'phi' of the Julia set C-parameter (default: 0.0).")
+                        help="Minimum argument 'phi' of the Julia set C-parameter (default: 0.0).")
     parser.add_argument('--phi_max', type=float, default=2 * np.pi,
-                        help=f"Maximum argument 'phi' of the Julia set C-parameter (default: 2pi).")
+                        help="Maximum argument 'phi' of the Julia set C-parameter (default: 2pi).")
     parser.add_argument('--n', type=float, default=100,
-                        help=f"Iteration limit for the fractal calculation (default: 100).")
+                        help="Iteration limit for the fractal calculation (default: 100).")
     parser.add_argument('-p', '--power', type=int, default=cfg.DEFAULT_POWER,
                         choices=[2, 3, 4, 5, 6, 7, 8],
                         help=f'Power/exponent used in the fractal formula: 2...8 (default: {cfg.DEFAULT_POWER}).')

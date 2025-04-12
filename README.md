@@ -270,13 +270,6 @@ To load a previously saved fractal, choose the
 
 ## Animations
 
-Both the zoom and rotation scripts require the `opencv-python`
-package to be installed:
-
-``` shell
-pip3 install opencv-python
-```
-
 ### Zooming
 
 The script `zoom_animation.py` generates a smooth zoom animation
