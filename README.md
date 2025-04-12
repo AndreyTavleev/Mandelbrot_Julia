@@ -14,6 +14,7 @@ parameters, customise colours and save the generated images.
 * Various colourmaps, including user-defined ones
 * Shading options for enhanced visuals
 * Export images to common formats
+* Scripts for creating the zoom and rotation animations
 
 ![](im_met_col/im_1.png)
 ![](im_met_col/im_2.png)
