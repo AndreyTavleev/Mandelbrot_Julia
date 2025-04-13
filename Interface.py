@@ -246,6 +246,7 @@ class ImageExporter:
         self.ui.comboBox_regime.setCurrentText(metadata['regime'])
         if metadata['regime'] == 'sin':
             self.freq = metadata['freq']
+            self.ui.lineEdit_freq.setText(str(self.freq))
         self.ui.comboBox_regime.activated.emit(1)
         self.no_ax_update = False
         self.ax.set_xlim(metadata['lims_x'][0], metadata['lims_x'][1])
@@ -395,6 +396,17 @@ class MJSet(MyWindowMandelbrotJulia, FractalControls, CoordinateManager, JuliaPa
             (self.ui.pushButton_Reset, self.reset_im),
         ]:
             button.clicked.connect(action)
+
+    def colour_scheme_changed(self):
+        self.fig.patch.set_facecolor(self.ui.centralwidget.palette().color(QPalette.Window).name())
+        if self.application.styleHints().colorScheme() == Qt.ColorScheme.Dark:
+            self.ax.tick_params(axis='both', colors='w')
+        else:
+            self.ax.tick_params(axis='both', colors='k')
+        self.fig.canvas.draw_idle()
+        self.main_layout.removeWidget(self.toolbar)
+        self.toolbar = CustomToolbar(self.sc, self)
+        self.main_layout.addWidget(self.toolbar)
 
     def closeEvent(self, event):
         self.application.closeAllWindows()

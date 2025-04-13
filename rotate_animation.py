@@ -18,11 +18,12 @@ from fractal_calculation import mandelbrot_julia_set
 def make_colourmap(colours_data):
     """Create a custom colourmap from a list of colour data."""
     colours = []
-    for pos, colour in colours_data:
-        r = round(float(colour['r']))
-        g = round(float(colour['g']))
-        b = round(float(colour['b']))
-        colours.append((pos, r, g, b, 1.0))  # RGBA
+    for item in colours_data:
+        pos = float(item['position'])
+        r = float(item['r'])
+        g = float(item['g'])
+        b = float(item['b'])
+        colours.append((pos, (r, g, b, 1.0)))  # RGBA
     if colours[0][0] > 0.0:
         colours.insert(0, (0.0, colours[0][1]))  # Reuse first colour
     if colours[-1][0] < 1.0:
@@ -32,16 +33,16 @@ def make_colourmap(colours_data):
 
 
 def make_frame(i, xmin, xmax, ymin, ymax, x_c, y_c, n, power, horizon, length, height,
-               colourmap, regime, freq, shading, azdeg, altdeg, vert_exag, path, frames):
+               colourmap, c_regime, freq, shading, azdeg, altdeg, vert_exag, path, frames):
     """Generate a single frame for the animation."""
     print(f'Frame {i + 1} / {frames}')
 
     data = mandelbrot_julia_set(xmin, xmax, ymin, ymax, horizon=horizon,
                                 length=length, height=height, n=n,
                                 x_c=x_c, y_c=y_c, power=power, mode='julia')[2].T
-    if regime == 'standard':
+    if c_regime == 'standard':
         pass
-    elif regime == 'sin':
+    elif c_regime == 'sin':
         data = (np.sin(data * freq)) ** 2
     if shading:
         light = colors.LightSource(azdeg=azdeg, altdeg=altdeg)
@@ -58,7 +59,8 @@ def validate_aspect_ratio(xmin, xmax, ymin, ymax, length, height):
     if not np.isclose(aspect_ratio, expected_aspect_ratio, atol=0.05):
         print('The aspect ratio should remain the same for axes and image size.')
         print(f'Aspect ratio = {aspect_ratio:.3f}')
-        print(f'Provided Dimensions (L, H) = ({length}, {height})')
+        print(f'Current dimensions and aspect ratio (L, H, AR) = ({length}, {height}, '
+              f'{expected_aspect_ratio:.3f})')
         suggested_height = int(float(length) * aspect_ratio)
         print(f'Suggested dimensions (L, H) = ({length}, {suggested_height:g})')
         print('Do you want to adjust the aspect ratio [y] or continue with the current one [n]?')
@@ -104,7 +106,7 @@ def generate_video(path, name, fps=30):
 
 def main(metadata, xmin, xmax, ymin, ymax, rho, phi_min, phi_max, n, power,
          horizon, frames, length, height, colourmap,
-         regime, freq, shading, azdeg, altdeg, vert_exag, threads, path):
+         c_regime, freq, shading, azdeg, altdeg, vert_exag, threads, path):
     """Main function to generate the rotational animation of a Julia set."""
     if not isinstance(colourmap, str):
         colourmap = make_colourmap(colourmap)
@@ -129,8 +131,8 @@ def main(metadata, xmin, xmax, ymin, ymax, rho, phi_min, phi_max, n, power,
             azdeg = max(0.0, min(360.0, metadata['azdeg']))
             altdeg = max(0.0, min(90.0, metadata['altdeg']))
             vert_exag = metadata['vert_exag']
-        regime = metadata['regime']
-        if regime == 'sin':
+        c_regime = metadata['regime']
+        if c_regime == 'sin':
             freq = metadata['freq']
         if isinstance(metadata['colourmap'], str):
             colourmap = metadata['colourmap']
@@ -148,7 +150,7 @@ def main(metadata, xmin, xmax, ymin, ymax, rho, phi_min, phi_max, n, power,
     result = [pool.apply_async(make_frame, kwds={'i': i, 'xmin': xmin, 'xmax': xmax, 'ymin': ymin, 'ymax': ymax,
                                                  'x_c': x_cc, 'y_c': y_cc, 'n': n, 'power': power,
                                                  'horizon': horizon, 'length': length, 'height': height,
-                                                 'colourmap': colourmap, 'regime': regime, 'freq': freq,
+                                                 'colourmap': colourmap, 'c_regime': c_regime, 'freq': freq,
                                                  'shading': shading, 'azdeg': azdeg, 'altdeg': altdeg,
                                                  'vert_exag': vert_exag, 'path': path, 'frames': frames})
               for i, (x_cc, y_cc) in enumerate(zip(x_c, y_c))]
@@ -199,7 +201,7 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--colourmap', type=str, default=cfg.DEFAULT_COLOURMAP,
                         help=f'Name of the colourmap to use or the path to a JSON file containing '
                              f'a colourmap definition (default: {cfg.DEFAULT_COLOURMAP}).')
-    parser.add_argument('-r', '--regime', type=str, default=cfg.DEFAULT_REGIME,
+    parser.add_argument('--c_regime', type=str, default=cfg.DEFAULT_REGIME,
                         choices=['standard', 'sin'],
                         help=f"The colouring regime: 'standard' or 'sin' (default: {cfg.DEFAULT_REGIME}).")
     parser.add_argument('-fr', '--freq', type=float, default=cfg.DEFAULT_FREQ,

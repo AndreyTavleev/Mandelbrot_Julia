@@ -298,6 +298,19 @@ fractal's coordinates and other calculation and colouring options.
 You can also use a previously saved `colourmap.json` file
 to set the custom colourmap.
 
+Another important parameter is the maximum number of iterations,
+$N$, for the initial and final fractals. There are two
+modes available:
+
+* `Static` — $N$ remains constant across all animation frames.
+It can be specified using the `--n_f` flag. If metadata is
+provided, the number of iterations will be taken from there.
+* `Dynamic` — $N$ changes dynamically from `n_i` to `n_f`,
+following the $n = n_i\cdot(1 + \alpha\lg({\rm zoom}))$ formula,
+where $\alpha$ is determined from `n_i` (default: 100) and `n_f`.
+If metadata is provided, the `n_f` parameter will be taken
+from there.
+
 **Note**: The aspect ratios of the initial and final frames
 should match. You can ensure this by adjusting the axis widths
 and the image's length and height accordingly. If the aspect

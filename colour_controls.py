@@ -5,7 +5,7 @@ from PySide6.QtGui import QColor, QPainter, QBrush, QMouseEvent, QLinearGradient
 from PySide6.QtWidgets import QWidget, QColorDialog, QFileDialog
 from matplotlib import colors
 
-from config import *
+from config import BaseDialog
 from ui_form_setGradient import Ui_setGradient
 from ui_form_setShading import Ui_setShading
 
@@ -157,26 +157,22 @@ class Gradient(QWidget):
             json.dump(colours_data, fp=f, indent=2)
 
     def load_from_file(self, path):
-        try:
-            with open(path, 'r') as f:
-                colours_data = json.load(f)
+        with open(path, 'r') as f:
+            colours_data = json.load(f)
 
-            self.points.clear()
+        self.points.clear()
 
-            for item in colours_data:
-                pos = float(item['position'])
-                r = round(float(item['r']) * 255)
-                g = round(float(item['g']) * 255)
-                b = round(float(item['b']) * 255)
-                colour = QColor(r, g, b)
-                pid = self.generate_id()
-                self.points.append((pid, pos, colour))
+        for item in colours_data:
+            pos = float(item['position'])
+            r = round(float(item['r']) * 255)
+            g = round(float(item['g']) * 255)
+            b = round(float(item['b']) * 255)
+            colour = QColor(r, g, b)
+            pid = self.generate_id()
+            self.points.append((pid, pos, colour))
 
-            self.points.sort(key=lambda t: t[1])
-            self.update()
-
-        except Exception as e:
-            print('Cannot load the colourmap:', e)
+        self.points.sort(key=lambda t: t[1])
+        self.update()
 
 
 class ColourManager:
@@ -216,15 +212,14 @@ class ColourManager:
         self.gradient_dialog.activateWindow()
         self.gradient_dialog.raise_()
 
-        if not fname:
-            return
-
-        self.gradient_dialog.GradWidget.save_to_file(fname)
+        if fname:
+            self.gradient_dialog.GradWidget.save_to_file(fname)
 
     def load_colourmap(self):
         fname = QFileDialog.getOpenFileName(self, caption='Choose a filename to load from',
                                             filter='json(*.json)')[0]
-        self.colourmap = self.gradient_dialog.GradWidget.load_from_file(fname)
+        if fname:
+            self.colourmap = self.gradient_dialog.GradWidget.load_from_file(fname)
 
     def show_set_shading_dialog(self):
         self.shading_dialog = DialogSetShading()
@@ -275,4 +270,5 @@ class ColourManager:
 
     def set_freq(self):
         self.freq = float(self.ui.lineEdit_freq.text())
-        self.ax_update()
+        if not self.no_ax_update:
+            self.ax_update()

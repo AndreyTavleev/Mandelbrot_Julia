@@ -17,11 +17,12 @@ from fractal_calculation import mandelbrot_julia_set
 def make_colourmap(colours_data):
     """Create a custom colourmap from a list of colour data."""
     colours = []
-    for pos, colour in colours_data:
-        r = round(float(colour['r']))
-        g = round(float(colour['g']))
-        b = round(float(colour['b']))
-        colours.append((pos, r, g, b, 1.0))  # RGBA
+    for item in colours_data:
+        pos = float(item['position'])
+        r = float(item['r'])
+        g = float(item['g'])
+        b = float(item['b'])
+        colours.append((pos, (r, g, b, 1.0)))  # RGBA
     if colours[0][0] > 0.0:
         colours.insert(0, (0.0, colours[0][1]))  # Reuse first colour
     if colours[-1][0] < 1.0:
@@ -31,8 +32,8 @@ def make_colourmap(colours_data):
 
 
 def make_frame(i, scale, xmin_1, xmax_1, ymin_1, ymax_1, xmin_2, xmax_2, ymin_2, ymax_2,
-               mode, x_c, y_c, power, horizon, length, height, colourmap, regime, freq,
-               shading, azdeg, altdeg, vert_exag, path, frames):
+               mode, x_c, y_c, power, n_regime, n_i, n_f, horizon, length, height, colourmap,
+               c_regime, freq, shading, azdeg, altdeg, vert_exag, path, frames):
     """Generate a single frame for the zoom animation."""
     xmin_3 = (1 - scale) * xmin_1 + scale * xmin_2
     ymin_3 = (1 - scale) * ymin_1 + scale * ymin_2
@@ -40,16 +41,23 @@ def make_frame(i, scale, xmin_1, xmax_1, ymin_1, ymax_1, xmin_2, xmax_2, ymin_2,
     ymax_3 = (1 - scale) * ymax_1 + scale * ymax_2
 
     zoom = (xmax_1 - xmin_1) / (xmax_3 - xmin_3)
-    n = int(100 * (1 + np.log10(zoom)))
+    if n_regime == 'static':
+        n = n_f
+    elif n_f is None:
+        n = int(n_i * (1 + np.log10(zoom)))
+    else:
+        final_zoom = (xmax_1 - xmin_1) / (xmax_2 - xmin_2)
+        alpha = (n_f / n_i - 1) / np.log10(final_zoom)
+        n = int(n_i * (1 + alpha * np.log10(zoom)))
 
     print(f'Frame {i + 1} / {frames}')
 
     data = mandelbrot_julia_set(xmin_3, xmax_3, ymin_3, ymax_3, horizon=horizon,
                                 length=length, height=height, n=n,
                                 x_c=x_c, y_c=y_c, power=power, mode=mode)[2].T
-    if regime == 'standard':
+    if c_regime == 'standard':
         pass
-    elif regime == 'sin':
+    elif c_regime == 'sin':
         data = (np.sin(data * freq)) ** 2
     if shading:
         light = colors.LightSource(azdeg=azdeg, altdeg=altdeg)
@@ -63,11 +71,16 @@ def validate_aspect_ratio(delta_x_1, delta_y_1, delta_x_2, delta_y_2, length, he
     """Validate the aspect ratio of the image and optionally adjust it."""
     initial_ratio = delta_y_1 / delta_x_1
     final_ratio = delta_y_2 / delta_x_2
-    if not np.isclose(initial_ratio, final_ratio, atol=0.05):
-        print('The aspect ratio should remain the same between the initial and final frames.')
+    image_aspect_ratio = height / length
+    if (not np.isclose(initial_ratio, final_ratio, atol=0.05) or
+            not np.isclose(initial_ratio, image_aspect_ratio, atol=0.05) or
+            not np.isclose(final_ratio, image_aspect_ratio, atol=0.05)):
+        print('The aspect ratio should remain the same between the initial and '
+              'final frames and the image dimensions.')
         print(f'Initial aspect ratio delta_y / delta_x = {initial_ratio:.3f}')
-        print('Final aspect ratio delta_y / delta_x =', final_ratio)
-        print(f'Current dimensions (L, H) = ({length}, {height})')
+        print(f'Final aspect ratio delta_y / delta_x = {final_ratio:.3f}')
+        print(f'Current dimensions and aspect ratio (L, H, AR) = ({length}, {height}, '
+              f'{height / length:.3f})')
         print(f'Suggested dimensions (L, H) = ({length}, {int(float(length) * initial_ratio):g}) or '
               f'({length}, {int(float(length) * final_ratio):g})')
         print(f'Suggested delta_y_2 = {delta_x_2 * initial_ratio}')
@@ -125,8 +138,8 @@ def generate_video(path, name, fps=30):
 
 def main(metadata, x_centre_1, y_centre_1, delta_x_1, delta_y_1,
          x_centre_2, y_centre_2, delta_x_2, delta_y_2, x_c, y_c,
-         mode, power, horizon, frames, length, height, colourmap,
-         regime, freq, shading, azdeg, altdeg, vert_exag, threads, path):
+         mode, power, n_regime, n_i, n_f, horizon, frames, length, height, colourmap,
+         c_regime, freq, shading, azdeg, altdeg, vert_exag, threads, path):
     """Main function to generate the zoom animation."""
     if not isinstance(colourmap, str):
         colourmap = make_colourmap(colourmap)
@@ -145,6 +158,7 @@ def main(metadata, x_centre_1, y_centre_1, delta_x_1, delta_y_1,
             y_c = metadata['y_c']
         horizon = metadata['horizon']
         power = metadata['power']
+        n_f = metadata['n']
         shading = metadata['shading']
         if shading:
             azdeg = metadata['azdeg']
@@ -152,8 +166,8 @@ def main(metadata, x_centre_1, y_centre_1, delta_x_1, delta_y_1,
             vert_exag = metadata['vert_exag']
             azdeg = max(0.0, min(360.0, azdeg))
             altdeg = max(0.0, min(90.0, altdeg))
-        regime = metadata['regime']
-        if regime == 'sin':
+        c_regime = metadata['regime']
+        if c_regime == 'sin':
             freq = metadata['freq']
         if isinstance(metadata['colourmap'], str):
             colourmap = metadata['colourmap']
@@ -176,9 +190,9 @@ def main(metadata, x_centre_1, y_centre_1, delta_x_1, delta_y_1,
     scales = 1.0 - np.logspace(0, -50, frames, base=2, dtype=np.float64)
     pool = mp.Pool(threads)
     result = [pool.apply_async(make_frame, args=(i, scale, xmin_1, xmax_1, ymin_1, ymax_1, xmin_2, xmax_2,
-                                                 ymin_2, ymax_2, mode, x_c, y_c, power, horizon, length, height,
-                                                 colourmap, regime, freq, shading, azdeg, altdeg, vert_exag, path,
-                                                 frames))
+                                                 ymin_2, ymax_2, mode, x_c, y_c, power, n_regime, n_i, n_f, horizon,
+                                                 length, height, colourmap, c_regime, freq, shading, azdeg,
+                                                 altdeg, vert_exag, path, frames))
               for i, scale in enumerate(scales)]
 
     im_arr = [res.get() for res in result]
@@ -195,7 +209,8 @@ if __name__ == '__main__':
     parser.add_argument('--metadata', type=str,
                         help='Path to the JSON metadata file for loading the fractal configurations. '
                              'The coordinates of the final fractal, fractal calculation parameters '
-                             'and colour settings will be loaded from this file.')
+                             '(particularly, the number of iterations) and colour settings '
+                             'will be loaded from this file.')
     parser.add_argument('--x_centre_1', type=np.float64, default=-0.75,
                         help='X-coordinate of the centre for the initial fractal (default: -0.75).')
     parser.add_argument('--y_centre_1', type=np.float64, default=0.0,
@@ -222,6 +237,17 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--power', type=int, default=cfg.DEFAULT_POWER,
                         choices=[2, 3, 4, 5, 6, 7, 8],
                         help=f'Power/exponent used in the fractal formula: 2...8 (default: {cfg.DEFAULT_POWER}).')
+    parser.add_argument('--n_regime', type=str, default='dynamic',
+                        choices=['dynamic', 'static'],
+                        help='Dynamic or static number of iterations for the fractal calculation (default: dynamic).')
+    parser.add_argument('--n_i', type=int, default=100,
+                        help="Number of iterations for the initial fractal (default: 100). "
+                             "If n_regime is 'static', parameter n_i is ignored.")
+    parser.add_argument('--n_f', type=int,
+                        help="Number of iterations for the final zoomed-in fractal. "
+                             "If not provided, and n_regime is 'dynamic', it will be calculated "
+                             "dynamically based on the zoom level. If n_regime is 'static', it defaults to 1000. "
+                             "If metadata is provided, the number of iterations will be taken from there.")
     parser.add_argument('-H', '--horizon', type=np.float64,
                         help=f'Divergence threshold (horizon) for the fractal calculation. '
                              f'(default: {cfg.DEFAULT_HORIZON_MANDELBROT} for mandelbrot and'
@@ -235,7 +261,7 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--colourmap', type=str, default=cfg.DEFAULT_COLOURMAP,
                         help=f'Name of the colourmap to use or the path to a JSON file containing '
                              f'a colourmap definition (default: {cfg.DEFAULT_COLOURMAP}).')
-    parser.add_argument('-r', '--regime', type=str, default=cfg.DEFAULT_REGIME,
+    parser.add_argument('--c_regime', type=str, default=cfg.DEFAULT_REGIME,
                         choices=['standard', 'sin'],
                         help=f"The colouring regime: 'standard' or 'sin' (default: {cfg.DEFAULT_REGIME}).")
     parser.add_argument('-fr', '--freq', type=float, default=cfg.DEFAULT_FREQ,
@@ -256,6 +282,11 @@ if __name__ == '__main__':
             args.horizon = cfg.DEFAULT_HORIZON_MANDELBROT
         else:
             args.horizon = cfg.DEFAULT_HORIZON_JULIA
+    if args.n_f is None:
+        if args.n_regime == 'static':
+            args.n_f = 1000
+        else:
+            args.n_f = None
     path = input('Enter the path to the folder where the frames and video will be saved (default: tmp/): ')
     if not path:
         path = 'tmp/'
