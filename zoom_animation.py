@@ -60,7 +60,7 @@ def make_frame(i, scale, xmin_1, xmax_1, ymin_1, ymax_1, xmin_2, xmax_2, ymin_2,
 
 
 def validate_aspect_ratio(delta_x_1, delta_y_1, delta_x_2, delta_y_2, length, height):
-    """Validate the aspect ratio of the image."""
+    """Validate the aspect ratio of the image and optionally adjust it."""
     initial_ratio = delta_y_1 / delta_x_1
     final_ratio = delta_y_2 / delta_x_2
     if not np.isclose(initial_ratio, final_ratio, atol=0.05):
