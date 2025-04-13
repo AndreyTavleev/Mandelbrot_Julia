@@ -69,7 +69,7 @@ def validate_aspect_ratio(delta_x_1, delta_y_1, delta_x_2, delta_y_2, length, he
         print('Final aspect ratio delta_y / delta_x =', final_ratio)
         print(f'Current dimensions (L, H) = ({length}, {height})')
         print(f'Suggested dimensions (L, H) = ({length}, {int(float(length) * initial_ratio):g}) or '
-              f'{length}, {int(float(length) * final_ratio):g}')
+              f'({length}, {int(float(length) * final_ratio):g})')
         print(f'Suggested delta_y_2 = {delta_x_2 * initial_ratio}')
         print(f'Or suggested delta_y_1 = {delta_x_1 * final_ratio}')
         print('Do you want to adjust the aspect ratio based on the initial fractal [1], '
