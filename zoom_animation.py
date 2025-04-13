@@ -4,7 +4,6 @@ import json
 import multiprocessing as mp
 import os
 import re
-import warnings
 from datetime import datetime as dt
 
 import matplotlib.pyplot as plt
@@ -58,38 +57,40 @@ def make_frame(i, scale, xmin_1, xmax_1, ymin_1, ymax_1, xmin_2, xmax_2, ymin_2,
                            blend_mode='hsv')
     plt.imsave(path + f'image_{i:d}.png', data,
                cmap=colourmap if not shading else None, origin='lower')
-    return
 
 
 def validate_aspect_ratio(delta_x_1, delta_y_1, delta_x_2, delta_y_2, length, height):
     """Validate the aspect ratio of the image."""
-    if not np.isclose(delta_y_1 / delta_x_1, delta_y_2 / delta_x_2, atol=0.05):
-        warnings.warn('The aspect ratio should remain the same between the initial and final frames.')
-        print(f'Initial aspect ratio delta_y / delta_x = {delta_y_1 / delta_x_1:.3f}')
-        print('Final aspect ratio delta_y / delta_x =', delta_y_2 / delta_x_2)
-        print(f'L, H = {length}, {height}')
-        print(f'Suggested L, H = {length}, {int(float(length) * delta_y_1 / delta_x_1):g} or '
-              f'{length}, {int(float(length) * delta_y_2 / delta_x_2):g}')
-        print(f'Suggested delta_y_2 = {delta_x_2 * delta_y_1 / delta_x_1}')
-        print(f'Or suggested delta_y_1 = {delta_x_1 * delta_y_2 / delta_x_2}')
+    initial_ratio = delta_y_1 / delta_x_1
+    final_ratio = delta_y_2 / delta_x_2
+    if not np.isclose(initial_ratio, final_ratio, atol=0.05):
+        print('The aspect ratio should remain the same between the initial and final frames.')
+        print(f'Initial aspect ratio delta_y / delta_x = {initial_ratio:.3f}')
+        print('Final aspect ratio delta_y / delta_x =', final_ratio)
+        print(f'Current dimensions (L, H) = ({length}, {height})')
+        print(f'Suggested dimensions (L, H) = ({length}, {int(float(length) * initial_ratio):g}) or '
+              f'{length}, {int(float(length) * final_ratio):g}')
+        print(f'Suggested delta_y_2 = {delta_x_2 * initial_ratio}')
+        print(f'Or suggested delta_y_1 = {delta_x_1 * final_ratio}')
+        print('Do you want to adjust the aspect ratio based on the initial fractal [1], '
+              'the final fractal [2], or continue with the current aspect ratio [n]?')
         while True:
-            print('Do you want to adjust the aspect ratio based on the initial fractal [1], '
-                  'the final fractal [2], or continue with the current aspect ratio [n]?')
             ans = input('Enter 1, 2 or n: ')
             if ans == '1':
-                delta_y_2 = delta_x_2 * delta_y_1 / delta_x_1
-                height = int(float(length) * delta_y_1 / delta_x_1)
-                print(f'Aspect ratio and image size adjusted for the initial fractal')
+                delta_y_2 = delta_x_2 * initial_ratio
+                height = int(float(length) * initial_ratio)
+                print('Aspect ratio and image size adjusted for the initial fractal')
                 return delta_x_1, delta_y_1, delta_x_2, delta_y_2, length, height
             elif ans == '2':
-                delta_y_1 = delta_x_1 * delta_y_2 / delta_x_2
-                height = int(float(length) * delta_y_2 / delta_x_2)
-                print(f'Aspect ratio and image size adjusted for the final fractal')
+                delta_y_1 = delta_x_1 * final_ratio
+                height = int(float(length) * final_ratio)
+                print('Aspect ratio and image size adjusted for the final fractal')
                 return delta_x_1, delta_y_1, delta_x_2, delta_y_2, length, height
             elif ans.lower() == 'n':
+                print('Keeping the current aspect ratio.')
                 return delta_x_1, delta_y_1, delta_x_2, delta_y_2, length, height
             else:
-                print('Please enter 1, 2 or n.')
+                continue
     return delta_x_1, delta_y_1, delta_x_2, delta_y_2, length, height
 
 

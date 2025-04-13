@@ -49,24 +49,23 @@ def make_frame(i, xmin, xmax, ymin, ymax, x_c, y_c, n, power, horizon, length, h
                            blend_mode='hsv')
     plt.imsave(path + f'image_{i:d}.png', data,
                cmap=colourmap if not shading else None, origin='lower')
-    return
 
 
 def validate_aspect_ratio(xmin, xmax, ymin, ymax, length, height):
-    """Validate the aspect ratio of the image."""
+    """Validate the aspect ratio of the image and optionally adjust it."""
     aspect_ratio = (ymax - ymin) / (xmax - xmin)
     expected_aspect_ratio = height / length
     if not np.isclose(aspect_ratio, expected_aspect_ratio, atol=0.05):
-        warnings.warn('The aspect ratio should remain the same for axes and image size.')
+        print('The aspect ratio should remain the same for axes and image size.')
         print(f'Aspect ratio = {aspect_ratio:.3f}')
-        print(f'L, H = {length}, {height}')
-        print(f'Suggested L, H = {length}, {int(float(length) * aspect_ratio):g}')
+        print(f'Provided Dimensions (L, H) = ({length}, {height})')
+        suggested_height = int(float(length) * aspect_ratio)
+        print(f'Suggested dimensions (L, H) = ({length}, {suggested_height:g})')
         print('Do you want to adjust the aspect ratio [y] or continue with the current one [n]?')
         while True:
             ans = input('Enter y or n: ')
             if ans.lower() == 'y':
-                height = int(float(length) * aspect_ratio)
-                return length, height
+                return length, suggested_height
             elif ans.lower() == 'n':
                 print('Continuing with the current aspect ratio.')
                 return length, height
