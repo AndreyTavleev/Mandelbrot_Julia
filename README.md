@@ -330,6 +330,17 @@ The video has been compressed for README:
 
 <https://github.com/user-attachments/assets/b6f3584d-e586-4d01-9979-5343ae6c0b84>
 
+Another example is created from [this metadata](im_met_col/Metadata_11.json),
+using the following flags:
+
+``` shell
+python3 zoom_animation.py --metadata Metadata_11.json --length 1500
+```
+
+The video has been compressed for README:
+
+
+
 ## Rotation
 
 The script `rotate_animation.py` generates a smooth rotational animation
