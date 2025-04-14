@@ -122,7 +122,7 @@ class ImageExporter:
                                        n=self.n, horizon=self.horizon, power=self.power,
                                        mode=self.mode)
         if self.regime == 'sin':
-            z = (np.sin(z * self.freq)) ** 2
+            z = (np.sin(z * self.freq + self.offset)) ** 2
         if self.save_image_dialog.ui.checkBox_withAxes.isChecked():
             fig, ax = plt.subplots(figsize=(length, height), dpi=dpi)
             if not self.shading:
@@ -192,6 +192,7 @@ class ImageExporter:
         metadata['regime'] = self.regime
         if self.regime == 'sin':
             metadata['freq'] = self.freq
+            metadata['offset'] = self.offset
         metadata['shading'] = self.shading
         if self.shading:
             metadata['azdeg'] = self.azdeg
@@ -246,7 +247,9 @@ class ImageExporter:
         self.ui.comboBox_regime.setCurrentText(metadata['regime'])
         if metadata['regime'] == 'sin':
             self.freq = metadata['freq']
+            self.offset = metadata['offset']
             self.ui.lineEdit_freq.setText(str(self.freq))
+            self.ui.lineEdit_offset.setText(str(self.offset))
         self.ui.comboBox_regime.activated.emit(1)
         self.no_ax_update = False
         self.ax.set_xlim(metadata['lims_x'][0], metadata['lims_x'][1])
@@ -284,11 +287,12 @@ class MJSet(MyWindowMandelbrotJulia, FractalControls, CoordinateManager, JuliaPa
         self.slider_move, self.rebuild, self.shading = False, False, False
         self.azdeg, self.altdeg, self.vert_exag = None, None, None
         self.regime = DEFAULT_REGIME
-        self.freq = DEFAULT_FREQ
+        self.freq, self.offset = DEFAULT_FREQ, DEFAULT_OFFSET
         self.no_ax_update = False
         self.c_view = DEFAULT_C_VIEW
         self.delta_slider_xc = DEFAULT_DELTA_SLIDER_C
         self.delta_slider_yc = DEFAULT_DELTA_SLIDER_C
+        self.cache = None
 
         # Initialize dialogs and toolbar
         self.main_layout = None
@@ -303,6 +307,8 @@ class MJSet(MyWindowMandelbrotJulia, FractalControls, CoordinateManager, JuliaPa
         self.ui.groupbox_C.setVisible(False)
         self.ui.lineEdit_freq.setVisible(False)
         self.ui.label_freq.setVisible(False)
+        self.ui.label_offset.setVisible(False)
+        self.ui.lineEdit_offset.setVisible(False)
         self.ui.comboBox_Set.addItems(['mandelbrot', 'julia'])
         self.ui.comboBox_regime.addItems(['standard', 'sin'])
         self.ui.comboBox_Power.addItems([str(i) for i in range(2, 9)])
@@ -355,7 +361,9 @@ class MJSet(MyWindowMandelbrotJulia, FractalControls, CoordinateManager, JuliaPa
         self.ui.horizontalSlider_N.setValue(self.n)
         self.ui.comboBox_Colourmap.setCurrentText(self.colourmap)
         self.ui.lineEdit_freq.setText(f'{self.freq:.2f}')
+        self.ui.lineEdit_offset.setText(f'{self.offset:.2f}')
         self.ui.label_freq.setText('\U000003C9:')
+        self.ui.label_offset.setText('\U00000394:')
 
         ini_slider_xc_val = self.from_value_to_slider(self.x_c_0, 'xc')
         ini_slider_yc_val = self.from_value_to_slider(self.y_c_0, 'yc')
@@ -375,12 +383,13 @@ class MJSet(MyWindowMandelbrotJulia, FractalControls, CoordinateManager, JuliaPa
         self.ui.comboBox_SaveLoad.activated.connect(self.save_load)
 
         self.ui.lineEdit_freq.editingFinished.connect(self.set_freq)
+        self.ui.lineEdit_offset.editingFinished.connect(self.set_offset)
 
         # Coordinate sliders
         self.ui.horizontalSlider_N.valueChanged.connect(self.change_n)
         self.ui.horizontalSlider_XC.valueChanged.connect(self.set_c_from_slider)
         self.ui.horizontalSlider_YC.valueChanged.connect(self.set_c_from_slider)
-        #
+
         # Button actions
         for button, action in [
             (self.ui.pushButton_zoom_plus, lambda: self.zoom('plus')),

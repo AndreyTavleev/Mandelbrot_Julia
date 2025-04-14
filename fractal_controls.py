@@ -60,10 +60,9 @@ class FractalControls:
         data = mandelbrot_julia_set(xmin, xmax, ymin, ymax, horizon=self.horizon,
                                     length=self.length, height=self.height, n=n,
                                     x_c=self.x_c, y_c=self.y_c, power=self.power, mode=self.mode)[2].T
-        if self.regime == 'standard':
-            pass
-        elif self.regime == 'sin':
-            data = (np.sin(data * self.freq)) ** 2
+        if self.regime == 'sin':
+            self.cache = data
+            data = (np.sin(data * self.freq + self.offset)) ** 2
         if not self.shading:
             im.set(data=data, extent=(xmin, xmax, ymin, ymax), cmap=self.colourmap)
         else:

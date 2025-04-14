@@ -33,7 +33,7 @@ def make_colourmap(colours_data):
 
 
 def make_frame(i, xmin, xmax, ymin, ymax, x_c, y_c, n, power, horizon, length, height,
-               colourmap, c_regime, freq, shading, azdeg, altdeg, vert_exag, path, frames):
+               colourmap, c_regime, freq, offset, shading, azdeg, altdeg, vert_exag, path, frames):
     """Generate a single frame for the animation."""
     print(f'Frame {i + 1} / {frames}')
 
@@ -43,7 +43,7 @@ def make_frame(i, xmin, xmax, ymin, ymax, x_c, y_c, n, power, horizon, length, h
     if c_regime == 'standard':
         pass
     elif c_regime == 'sin':
-        data = (np.sin(data * freq)) ** 2
+        data = (np.sin(data * freq + offset)) ** 2
     if shading:
         light = colors.LightSource(azdeg=azdeg, altdeg=altdeg)
         data = light.shade(data, cmap=plt.get_cmap(colourmap), vert_exag=vert_exag,
@@ -106,7 +106,7 @@ def generate_video(path, name, fps=30):
 
 def main(metadata, xmin, xmax, ymin, ymax, rho, phi_min, phi_max, n, power,
          horizon, frames, length, height, colourmap,
-         c_regime, freq, shading, azdeg, altdeg, vert_exag, threads, path):
+         c_regime, freq, offset, shading, azdeg, altdeg, vert_exag, threads, path):
     """Main function to generate the rotational animation of a Julia set."""
     if not isinstance(colourmap, str):
         colourmap = make_colourmap(colourmap)
@@ -134,6 +134,7 @@ def main(metadata, xmin, xmax, ymin, ymax, rho, phi_min, phi_max, n, power,
         c_regime = metadata['regime']
         if c_regime == 'sin':
             freq = metadata['freq']
+            offset = metadata['offset']
         if isinstance(metadata['colourmap'], str):
             colourmap = metadata['colourmap']
         else:
@@ -148,9 +149,9 @@ def main(metadata, xmin, xmax, ymin, ymax, rho, phi_min, phi_max, n, power,
     pool = mp.Pool(threads)
 
     result = [pool.apply_async(make_frame, kwds={'i': i, 'xmin': xmin, 'xmax': xmax, 'ymin': ymin, 'ymax': ymax,
-                                                 'x_c': x_cc, 'y_c': y_cc, 'n': n, 'power': power,
-                                                 'horizon': horizon, 'length': length, 'height': height,
-                                                 'colourmap': colourmap, 'c_regime': c_regime, 'freq': freq,
+                                                 'x_c': x_cc, 'y_c': y_cc, 'n': n, 'power': power, 'horizon': horizon,
+                                                 'length': length, 'height': height, 'colourmap': colourmap,
+                                                 'c_regime': c_regime, 'freq': freq, 'offset': offset,
                                                  'shading': shading, 'azdeg': azdeg, 'altdeg': altdeg,
                                                  'vert_exag': vert_exag, 'path': path, 'frames': frames})
               for i, (x_cc, y_cc) in enumerate(zip(x_c, y_c))]
@@ -206,6 +207,8 @@ if __name__ == '__main__':
                         help=f"The colouring regime: 'standard' or 'sin' (default: {cfg.DEFAULT_REGIME}).")
     parser.add_argument('-fr', '--freq', type=float, default=cfg.DEFAULT_FREQ,
                         help=f"Frequency for 'sin' colour regime (default: {cfg.DEFAULT_FREQ}).")
+    parser.add_argument('-of', '--offset', type=float, default=cfg.DEFAULT_OFFSET,
+                        help=f"Offset for 'sin' colour regime (default: {cfg.DEFAULT_OFFSET}).")
     parser.add_argument('-s', '--shading', action='store_true',
                         help='Enable 3D-like surface shading (hillshading).')
     parser.add_argument('-az', '--azdeg', type=float, default=315,

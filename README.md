@@ -216,9 +216,10 @@ There are two colouring techniques available in the
 * `Standard`: Applies linear colour scaling, mapping the
 lowest data value to 0 and the highest to 1.
 * `Sin`: Transforms the data using the formula
-$\sin^2(\omega \cdot \text{data})$,
-where the frequency $\omega$ (default: $0.01$) can be set
-by the user. This allows for cyclic colour variation.
+$\sin^2(\omega \cdot \text{data} + \Delta)$,
+where the frequency $\omega$ (default: $0.01$) and the 
+offset $\Delta$ (default: $0.0$) can be set by the user. 
+This allows for cyclic colour variation.
 
 ### Shading
 
@@ -284,9 +285,11 @@ usage: zoom_animation.py [-h] [--metadata METADATA] [--x_centre_1 X_CENTRE_1]
                          [--y_centre_2 Y_CENTRE_2] [--delta_x_2 DELTA_X_2]
                          [--delta_y_2 DELTA_Y_2] [--x_c X_C] [--y_c Y_C]
                          [-m {mandelbrot,julia}] [-p {2,3,4,5,6,7,8}]
+                         [--n_regime {dynamic,static}] [--n_i N_I] [--n_f N_F]
                          [-H HORIZON] [-f FRAMES] [-l LENGTH] [-hei HEIGHT]
-                         [-c COLOURMAP] [-r {standard,sin}] [-fr FREQ] [-s]
-                         [-az AZDEG] [-al ALTDEG] [-ve VERT_EXAG] [-t THREADS]
+                         [-c COLOURMAP] [--c_regime {standard,sin}] [-fr FREQ]
+                         [-of OFFSET] [-s] [-az AZDEG] [-al ALTDEG]
+                         [-ve VERT_EXAG] [-t THREADS]
 ...description...
 ```
 
@@ -339,13 +342,13 @@ via the `--help` flag:
 
 ``` shell
 python3 rotate_animation.py --help
-usage: rotate_animation.py [-h] [--metadata METADATA] [--xmin XMIN]
-                           [--xmax XMAX] [--ymin YMIN] [--ymax YMAX]
-                           [--rho RHO] [--phi_min PHI_MIN] [--phi_max PHI_MAX]
-                           [--n N] [-p {2,3,4,5,6,7,8}] [-H HORIZON]
-                           [-f FRAMES] [-l LENGTH] [-hei HEIGHT]
-                           [-c COLOURMAP] [-r {standard,sin}] [-fr FREQ] [-s]
-                           [-az AZDEG] [-al ALTDEG] [-ve VERT_EXAG]
+usage: rotate_animation.py [-h] [--metadata METADATA] [--xmin XMIN] [--xmax XMAX]
+                           [--ymin YMIN] [--ymax YMAX] [--rho RHO]
+                           [--phi_min PHI_MIN] [--phi_max PHI_MAX] [--n N]
+                           [-p {2,3,4,5,6,7,8}] [-H HORIZON] [-f FRAMES]
+                           [-l LENGTH] [-hei HEIGHT] [-c COLOURMAP]
+                           [--c_regime {standard,sin}] [-fr FREQ] [-of OFFSET]
+                           [-s] [-az AZDEG] [-al ALTDEG] [-ve VERT_EXAG]
                            [-t THREADS]
 ...description...
 ```
@@ -386,8 +389,9 @@ corresponding **metadata**:
 [Third](im_met_col/Metadata_5.json):
 ![](im_met_col/im_5.png)
 `Sin` colourisation results in beautifully cycling colours.
-The $\omega$ parameter controls how frequently the
-colours cycle ([Metadata](im_met_col/Metadata_6.json)):
+The parameter $\omega$ controls how frequently the
+colours cycle, while the offset $\Delta$ shifts the colour
+gradient ([Metadata](im_met_col/Metadata_6.json)):
 ![](im_met_col/im_6.png)
 [Fifth](im_met_col/Metadata_7.json):
 ![](im_met_col/im_7.png)

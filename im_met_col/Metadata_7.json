@@ -14,5 +14,6 @@
   "colourmap": "BrBG",
   "regime": "sin",
   "freq": 0.05,
+  "offset": 0.0,
   "shading": false
 }

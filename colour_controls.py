@@ -1,5 +1,6 @@
 import json
 
+import numpy as np
 from PySide6.QtCore import Qt, QPointF
 from PySide6.QtGui import QColor, QPainter, QBrush, QMouseEvent, QLinearGradient
 from PySide6.QtWidgets import QWidget, QColorDialog, QFileDialog
@@ -260,15 +261,31 @@ class ColourManager:
             return
         self.regime = self.ui.comboBox_regime.currentText()
         if regime == 'standard':
+            self.cache = None
             self.ui.lineEdit_freq.setVisible(False)
             self.ui.label_freq.setVisible(False)
+            self.ui.lineEdit_offset.setVisible(False)
+            self.ui.label_offset.setVisible(False)
         elif regime == 'sin':
             self.ui.lineEdit_freq.setVisible(True)
             self.ui.label_freq.setVisible(True)
+            self.ui.lineEdit_offset.setVisible(True)
+            self.ui.label_offset.setVisible(True)
         if not self.no_ax_update:
             self.ax_update()
 
     def set_freq(self):
         self.freq = float(self.ui.lineEdit_freq.text())
-        if not self.no_ax_update:
-            self.ax_update()
+        data = (np.sin(self.cache * self.freq + self.offset)) ** 2
+        im = self.ax.images[0]
+        im.set_array(data)
+        im.set(clim=(im.get_array().min(), im.get_array().max()))
+        self.fig.canvas.draw_idle()
+
+    def set_offset(self):
+        self.offset = float(self.ui.lineEdit_offset.text())
+        data = (np.sin(self.cache * self.freq + self.offset)) ** 2
+        im = self.ax.images[0]
+        im.set_array(data)
+        im.set(clim=(im.get_array().min(), im.get_array().max()))
+        self.fig.canvas.draw_idle()

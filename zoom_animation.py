@@ -33,7 +33,7 @@ def make_colourmap(colours_data):
 
 def make_frame(i, scale, xmin_1, xmax_1, ymin_1, ymax_1, xmin_2, xmax_2, ymin_2, ymax_2,
                mode, x_c, y_c, power, n_regime, n_i, n_f, horizon, length, height, colourmap,
-               c_regime, freq, shading, azdeg, altdeg, vert_exag, path, frames):
+               c_regime, freq, offset, shading, azdeg, altdeg, vert_exag, path, frames):
     """Generate a single frame for the zoom animation."""
     xmin_3 = (1 - scale) * xmin_1 + scale * xmin_2
     ymin_3 = (1 - scale) * ymin_1 + scale * ymin_2
@@ -58,7 +58,7 @@ def make_frame(i, scale, xmin_1, xmax_1, ymin_1, ymax_1, xmin_2, xmax_2, ymin_2,
     if c_regime == 'standard':
         pass
     elif c_regime == 'sin':
-        data = (np.sin(data * freq)) ** 2
+        data = (np.sin(data * freq + offset)) ** 2
     if shading:
         light = colors.LightSource(azdeg=azdeg, altdeg=altdeg)
         data = light.shade(data, cmap=plt.get_cmap(colourmap), vert_exag=vert_exag,
@@ -139,7 +139,7 @@ def generate_video(path, name, fps=30):
 def main(metadata, x_centre_1, y_centre_1, delta_x_1, delta_y_1,
          x_centre_2, y_centre_2, delta_x_2, delta_y_2, x_c, y_c,
          mode, power, n_regime, n_i, n_f, horizon, frames, length, height, colourmap,
-         c_regime, freq, shading, azdeg, altdeg, vert_exag, threads, path):
+         c_regime, freq, offset, shading, azdeg, altdeg, vert_exag, threads, path):
     """Main function to generate the zoom animation."""
     if not isinstance(colourmap, str):
         colourmap = make_colourmap(colourmap)
@@ -169,6 +169,7 @@ def main(metadata, x_centre_1, y_centre_1, delta_x_1, delta_y_1,
         c_regime = metadata['regime']
         if c_regime == 'sin':
             freq = metadata['freq']
+            offset = metadata['offset']
         if isinstance(metadata['colourmap'], str):
             colourmap = metadata['colourmap']
         else:
@@ -191,7 +192,7 @@ def main(metadata, x_centre_1, y_centre_1, delta_x_1, delta_y_1,
     pool = mp.Pool(threads)
     result = [pool.apply_async(make_frame, args=(i, scale, xmin_1, xmax_1, ymin_1, ymax_1, xmin_2, xmax_2,
                                                  ymin_2, ymax_2, mode, x_c, y_c, power, n_regime, n_i, n_f, horizon,
-                                                 length, height, colourmap, c_regime, freq, shading, azdeg,
+                                                 length, height, colourmap, c_regime, freq, offset, shading, azdeg,
                                                  altdeg, vert_exag, path, frames))
               for i, scale in enumerate(scales)]
 
@@ -266,6 +267,8 @@ if __name__ == '__main__':
                         help=f"The colouring regime: 'standard' or 'sin' (default: {cfg.DEFAULT_REGIME}).")
     parser.add_argument('-fr', '--freq', type=float, default=cfg.DEFAULT_FREQ,
                         help=f"Frequency for 'sin' colour regime (default: {cfg.DEFAULT_FREQ}).")
+    parser.add_argument('-of', '--offset', type=float, default=cfg.DEFAULT_OFFSET,
+                        help=f"Offset for 'sin' colour regime (default: {cfg.DEFAULT_OFFSET}).")
     parser.add_argument('-s', '--shading', action='store_true',
                         help='Enable 3D-like surface shading (hillshading).')
     parser.add_argument('-az', '--azdeg', type=float, default=315,

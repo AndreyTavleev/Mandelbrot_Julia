@@ -16,5 +16,6 @@
   "colourmap": "twilight_shifted_r",
   "regime": "sin",
   "freq": 0.005,
+  "offset": 0.0,
   "shading": false
 }
