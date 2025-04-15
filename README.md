@@ -95,7 +95,7 @@ the sequence is iterated until the divergence criterion is met.
 The function then returns:
 
 ``` math
-{\rm iter} - \log_k \left(\frac{\ln(z_n^2)}{\ln({\rm horizon})}\right),
+{\rm iter} + 2 - \log_k \left(\frac{\ln(z_n^2)}{\ln({\rm horizon})}\right),
 ```
 
 Where ${\rm iter}$ is the iteration number at which the divergence
@@ -155,6 +155,9 @@ It varies depending on the set type and power.
 The GUI provides several options that the user can customise:
 
 * **Set type** — Choose between Mandelbrot and Julia sets.
+* **Power** — Degree of the polynomial $k$ ($2 \leq k \leq 8$).
+Mandelbrot sets shift when the power is changed, so use the
+`Reset limits` button to re-centre the set.
 * **Horizon** — Divergence threshold $\geq4$. Very large for
 Mandelbrot ($\sim 2\cdot 10^{50}$), but small for Julia ($\sim 4$).
 * $N$ — **Iteration limit** — The maximum number of iterations per point.
@@ -165,14 +168,10 @@ This value can be:
   * Reset to default using the `Reset N` button. The default
   value of $N$ depends on the zoom level as
   $N=100\cdot(1 + \lg({\rm zoom}))$.
-* **Power** — Degree of the polynomial $k$ ($2 \leq k \leq 8$).
-Mandelbrot sets shift when the power is changed, so use the
-`Reset limits` button to re-centre the set.
 
-To generate an image with the desired **Horizon**,
-**N** and **Power**, enter the values and click the
-`Rebuild` button. To restore the default values, click
-the `Reset` button.
+To generate an image with the desired **Horizon** and
+**N**, enter the values and click the `Rebuild` button.
+To restore the default values, click the `Reset` button.
 
 * $C$ — **Complex constant for Julia set.** This can be
 set in two ways:
