@@ -216,6 +216,7 @@ class ImageExporter:
         self.ui.lineEdit_N.setText(str(metadata['n']))
         self.ui.lineEdit_H.setText(str(metadata['horizon']))
         self.ui.comboBox_Power.setCurrentText(str(metadata['power']))
+        self.ui.comboBox_Power.activated.emit(1)
         self.ui.pushButton_Rebuild.clicked.emit()
         if isinstance(metadata['colourmap'], str):
             self.ui.comboBox_Colourmap.setCurrentText(metadata['colourmap'])
@@ -246,6 +247,7 @@ class ImageExporter:
             self.altdeg = max(0.0, min(90.0, self.altdeg))
         self.ui.comboBox_regime.setCurrentText(metadata['regime'])
         if metadata['regime'] == 'sin':
+            self.cache = None
             self.freq = metadata['freq']
             self.offset = metadata['offset']
             self.ui.lineEdit_freq.setText(str(self.freq))
@@ -381,6 +383,7 @@ class MJSet(MyWindowMandelbrotJulia, FractalControls, CoordinateManager, JuliaPa
         self.ui.comboBox_regime.activated.connect(self.set_regime)
         self.ui.comboBox_viewC.activated.connect(self.change_c_view)
         self.ui.comboBox_SaveLoad.activated.connect(self.save_load)
+        self.ui.comboBox_Power.activated.connect(self.set_power)
 
         self.ui.lineEdit_freq.editingFinished.connect(self.set_freq)
         self.ui.lineEdit_offset.editingFinished.connect(self.set_offset)

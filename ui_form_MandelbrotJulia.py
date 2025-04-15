@@ -151,59 +151,69 @@ class Ui_MainWindowMandelbrotJulia(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 236, 775))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 236, 777))
         self.gridLayout = QGridLayout(self.scrollAreaWidgetContents)
         self.gridLayout.setObjectName(u"gridLayout")
         self.verticalLayout_HNPColour = QVBoxLayout()
         self.verticalLayout_HNPColour.setObjectName(u"verticalLayout_HNPColour")
+        self.verticalLayout_HNP = QVBoxLayout()
+        self.verticalLayout_HNP.setObjectName(u"verticalLayout_HNP")
         self.gridLayout_HNP = QGridLayout()
         self.gridLayout_HNP.setObjectName(u"gridLayout_HNP")
-        self.lineEdit_H = QLineEdit(self.scrollAreaWidgetContents)
-        self.lineEdit_H.setObjectName(u"lineEdit_H")
-
-        self.gridLayout_HNP.addWidget(self.lineEdit_H, 2, 1, 1, 1)
-
         self.lineEdit_N = QLineEdit(self.scrollAreaWidgetContents)
         self.lineEdit_N.setObjectName(u"lineEdit_N")
 
         self.gridLayout_HNP.addWidget(self.lineEdit_N, 3, 1, 1, 1)
 
-        self.comboBox_Set = QComboBox(self.scrollAreaWidgetContents)
-        self.comboBox_Set.setObjectName(u"comboBox_Set")
+        self.label_Power = QLabel(self.scrollAreaWidgetContents)
+        self.label_Power.setObjectName(u"label_Power")
 
-        self.gridLayout_HNP.addWidget(self.comboBox_Set, 0, 1, 1, 1)
-
-        self.label_Set = QLabel(self.scrollAreaWidgetContents)
-        self.label_Set.setObjectName(u"label_Set")
-
-        self.gridLayout_HNP.addWidget(self.label_Set, 0, 0, 1, 1)
+        self.gridLayout_HNP.addWidget(self.label_Power, 1, 0, 1, 1)
 
         self.comboBox_Power = QComboBox(self.scrollAreaWidgetContents)
         self.comboBox_Power.setObjectName(u"comboBox_Power")
+        sizePolicy3 = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
+        sizePolicy3.setHorizontalStretch(0)
+        sizePolicy3.setVerticalStretch(0)
+        sizePolicy3.setHeightForWidth(self.comboBox_Power.sizePolicy().hasHeightForWidth())
+        self.comboBox_Power.setSizePolicy(sizePolicy3)
+        self.comboBox_Power.setMinimumSize(QSize(50, 0))
 
-        self.gridLayout_HNP.addWidget(self.comboBox_Power, 4, 1, 1, 1)
+        self.gridLayout_HNP.addWidget(self.comboBox_Power, 1, 1, 1, 1, Qt.AlignmentFlag.AlignHCenter)
+
+        self.lineEdit_H = QLineEdit(self.scrollAreaWidgetContents)
+        self.lineEdit_H.setObjectName(u"lineEdit_H")
+
+        self.gridLayout_HNP.addWidget(self.lineEdit_H, 4, 1, 1, 1)
 
         self.label_N = QLabel(self.scrollAreaWidgetContents)
         self.label_N.setObjectName(u"label_N")
 
         self.gridLayout_HNP.addWidget(self.label_N, 3, 0, 1, 1)
 
+        self.comboBox_Set = QComboBox(self.scrollAreaWidgetContents)
+        self.comboBox_Set.setObjectName(u"comboBox_Set")
+
+        self.gridLayout_HNP.addWidget(self.comboBox_Set, 0, 1, 1, 1, Qt.AlignmentFlag.AlignHCenter)
+
+        self.line_2 = QFrame(self.scrollAreaWidgetContents)
+        self.line_2.setObjectName(u"line_2")
+        self.line_2.setFrameShape(QFrame.Shape.HLine)
+        self.line_2.setFrameShadow(QFrame.Shadow.Sunken)
+
+        self.gridLayout_HNP.addWidget(self.line_2, 2, 0, 1, 2)
+
+        self.label_Set = QLabel(self.scrollAreaWidgetContents)
+        self.label_Set.setObjectName(u"label_Set")
+
+        self.gridLayout_HNP.addWidget(self.label_Set, 0, 0, 1, 1)
+
         self.label_Horizon = QLabel(self.scrollAreaWidgetContents)
         self.label_Horizon.setObjectName(u"label_Horizon")
 
-        self.gridLayout_HNP.addWidget(self.label_Horizon, 2, 0, 1, 1)
+        self.gridLayout_HNP.addWidget(self.label_Horizon, 4, 0, 1, 1)
 
-        self.label_Power = QLabel(self.scrollAreaWidgetContents)
-        self.label_Power.setObjectName(u"label_Power")
-
-        self.gridLayout_HNP.addWidget(self.label_Power, 4, 0, 1, 1)
-
-        self.line_6 = QFrame(self.scrollAreaWidgetContents)
-        self.line_6.setObjectName(u"line_6")
-        self.line_6.setFrameShape(QFrame.Shape.HLine)
-        self.line_6.setFrameShadow(QFrame.Shadow.Sunken)
-
-        self.gridLayout_HNP.addWidget(self.line_6, 1, 0, 1, 2)
+        self.verticalLayout_HNP.addLayout(self.gridLayout_HNP)
 
         self.horizontalLayout_3 = QHBoxLayout()
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
@@ -217,9 +227,9 @@ class Ui_MainWindowMandelbrotJulia(object):
 
         self.horizontalLayout_3.addWidget(self.pushButton_Reset)
 
-        self.gridLayout_HNP.addLayout(self.horizontalLayout_3, 5, 0, 1, 2)
+        self.verticalLayout_HNP.addLayout(self.horizontalLayout_3)
 
-        self.verticalLayout_HNPColour.addLayout(self.gridLayout_HNP)
+        self.verticalLayout_HNPColour.addLayout(self.verticalLayout_HNP)
 
         self.line = QFrame(self.scrollAreaWidgetContents)
         self.line.setObjectName(u"line")
@@ -264,9 +274,6 @@ class Ui_MainWindowMandelbrotJulia(object):
 
         self.comboBox_regime = QComboBox(self.scrollAreaWidgetContents)
         self.comboBox_regime.setObjectName(u"comboBox_regime")
-        sizePolicy3 = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
-        sizePolicy3.setHorizontalStretch(0)
-        sizePolicy3.setVerticalStretch(0)
         sizePolicy3.setHeightForWidth(self.comboBox_regime.sizePolicy().hasHeightForWidth())
         self.comboBox_regime.setSizePolicy(sizePolicy3)
         self.comboBox_regime.setMinimumSize(QSize(71, 0))
@@ -406,10 +413,10 @@ class Ui_MainWindowMandelbrotJulia(object):
         self.gridLayout_2.addLayout(self.horizontalLayout_Main, 0, 0, 1, 1)
 
         MainWindowMandelbrotJulia.setCentralWidget(self.centralwidget)
-        QWidget.setTabOrder(self.comboBox_Set, self.lineEdit_H)
-        QWidget.setTabOrder(self.lineEdit_H, self.lineEdit_N)
-        QWidget.setTabOrder(self.lineEdit_N, self.comboBox_Power)
-        QWidget.setTabOrder(self.comboBox_Power, self.pushButton_Rebuild)
+        QWidget.setTabOrder(self.comboBox_Set, self.comboBox_Power)
+        QWidget.setTabOrder(self.comboBox_Power, self.lineEdit_N)
+        QWidget.setTabOrder(self.lineEdit_N, self.lineEdit_H)
+        QWidget.setTabOrder(self.lineEdit_H, self.pushButton_Rebuild)
         QWidget.setTabOrder(self.pushButton_Rebuild, self.pushButton_Reset)
         QWidget.setTabOrder(self.pushButton_Reset, self.comboBox_Colourmap)
         QWidget.setTabOrder(self.comboBox_Colourmap, self.comboBox_regime)
@@ -447,10 +454,10 @@ class Ui_MainWindowMandelbrotJulia(object):
         self.pushButton_ResetC.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"Reset C", None))
         self.label_C.setText(
             QCoreApplication.translate("MainWindowMandelbrotJulia", u"C = x + i*y = rho * e^{i*phi}", None))
-        self.label_Set.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"Set:", None))
-        self.label_N.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"N:", None))
-        self.label_Horizon.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"Horizon:", None))
         self.label_Power.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"Power:", None))
+        self.label_N.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"N:", None))
+        self.label_Set.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"Set:", None))
+        self.label_Horizon.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"Horizon:", None))
         self.pushButton_Rebuild.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"Rebuild", None))
         self.pushButton_Reset.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"Reset", None))
         self.label_Colourmap.setText(QCoreApplication.translate("MainWindowMandelbrotJulia", u"Colourmap", None))

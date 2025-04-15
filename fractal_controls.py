@@ -112,6 +112,14 @@ class FractalControls:
             self.ax_update()
         self.ui.lineEdit_N.setText(f'{self.n}')
 
+    def set_power(self):
+        old_power = self.power
+        self.power = int(self.ui.comboBox_Power.currentText())
+        if self.power == old_power:
+            return
+        if not self.no_ax_update:
+            self.ax_update()
+
 
 class JuliaParameterControl:
     def set_c_from_slider(self):
@@ -213,12 +221,14 @@ class JuliaParameterControl:
             # Clamp values to (-1, 1)
             self.x_c = max(-1.0, min(1.0, self.x_c))
             self.y_c = max(-1.0, min(1.0, self.y_c))
+            self.rho_c, self.phi_c = polar_coordinates(self.x_c, self.y_c)
         elif regime == 'rhophi':
             self.rho_c = abs(float(self.set_c_dialog.ui.lineEdit_rhoC.text()))
             # Clamp value to (0, sqrt(2))
             self.rho_c = max(0.0, min(math.sqrt(2.0), self.rho_c))
             self.phi_c = float(self.set_c_dialog.ui.lineEdit_phiC.text()) % (2 * math.pi)
             self.phi_c = self.phi_c + 2 * math.pi * (self.phi_c < 0)  # Ensure the angle is in [0, 2pi]
+            self.x_c, self.y_c = cartesian_coordinates(self.rho_c, self.phi_c)
         else:
             raise ValueError('Invalid regime.')
 
@@ -240,7 +250,6 @@ class JuliaParameterControl:
 
 class ImageRenderer:
     def rebuild_im(self):
-        self.power = int(self.ui.comboBox_Power.currentText())
         self.horizon = float(self.ui.lineEdit_H.text())
         self.rebuild = True
         nn = self.n
@@ -279,10 +288,8 @@ class ImageRenderer:
             self.horizon = DEFAULT_HORIZON_MANDELBROT
         elif self.mode == 'julia':
             self.horizon = DEFAULT_HORIZON_JULIA
-        self.power = DEFAULT_POWER
         self.reset_n()
         self.ui.lineEdit_H.setText(f'{self.horizon:.1e}')
-        self.ui.comboBox_Power.setCurrentText(str(self.power))
 
     def mode_update(self):
         mode_old = self.mode
@@ -297,6 +304,8 @@ class ImageRenderer:
             self.ui.groupbox_C.setVisible(False)
         if not self.isFullScreen():
             self.adjustSize()
+        self.power = DEFAULT_POWER
+        self.ui.comboBox_Power.setCurrentText(str(self.power))
         if not self.no_ax_update:
             self.reset_lims()
             self.reset_im()
