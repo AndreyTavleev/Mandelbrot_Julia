@@ -23,7 +23,6 @@ class Ui_MainWindowMandelbrotJulia(object):
             MainWindowMandelbrotJulia.setObjectName(u"MainWindowMandelbrotJulia")
         MainWindowMandelbrotJulia.resize(900, 763)
         MainWindowMandelbrotJulia.setMinimumSize(QSize(900, 763))
-        MainWindowMandelbrotJulia.setMaximumSize(QSize(16777215, 16777215))
         self.centralwidget = QWidget(MainWindowMandelbrotJulia)
         self.centralwidget.setObjectName(u"centralwidget")
         self.gridLayout_2 = QGridLayout(self.centralwidget)

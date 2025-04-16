@@ -14,7 +14,7 @@ class BaseDialog(QDialog):
 
 # Constants for default values
 DEFAULT_MODE = 'mandelbrot'
-DEFAULT_HORIZON_MANDELBROT = 2e50
+DEFAULT_HORIZON_MANDELBROT = 2e35
 DEFAULT_HORIZON_JULIA = 4
 DEFAULT_POWER = 2
 DEFAULT_COLOURMAP = 'jet'
@@ -27,7 +27,7 @@ DEFAULT_C_VIEW = 'xy'
 DEFAULT_X_C = -0.8000
 DEFAULT_Y_C = -0.1560
 DEFAULT_DELTA_SLIDER_C = 5e-4  # 2 / 4000 = (1 - (-1)) / 4000
-LIMS_MANDELBROT_DICT = {'2': (-2, 0.5, -1.25, 1.25), '3': (-1, 1, -1.25, 1.25),
+LIMS_MANDELBROT_DICT = {'2': (-2, 0.5, -1.25, 1.25), '3': (-1, 1, -1.35, 1.35),
                         '4': (-1.35, 1, -1.25, 1.25), '5': (-1, 1, -1, 1),
                         '6': (-1.3, 1.2, -1.2, 1.2), '7': (-1.25, 1.25, -1.3, 1.3),
                         '8': (-1.25, 1.25, -1.3, 1.3)}

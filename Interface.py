@@ -6,7 +6,7 @@ import numpy as np
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QPalette, QIcon, QPixmap, QColor
 from PySide6.QtWidgets import (QApplication, QVBoxLayout, QMainWindow,
-                               QFileDialog, QComboBox)
+                               QFileDialog, QComboBox, QProxyStyle, QStyle)
 from matplotlib import colors
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
@@ -20,6 +20,13 @@ from ui_form_Save import Ui_Save
 from ui_form_MandelbrotJulia import Ui_MainWindowMandelbrotJulia
 
 matplotlib.use('Qt5Agg')
+
+
+class CustomSliderStyle(QProxyStyle):
+    def styleHint(self, hint, option=None, widget=None, returnData=None):
+        if hint == QStyle.SH_Slider_AbsoluteSetButtons:
+            return Qt.LeftButton.value
+        return super().styleHint(hint, option, widget, returnData)
 
 
 class MplCanvas(FigureCanvasQTAgg):
@@ -426,6 +433,7 @@ class MJSet(MyWindowMandelbrotJulia, FractalControls, CoordinateManager, JuliaPa
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
+    app.setStyle(CustomSliderStyle())
     window = MJSet(app)
     window.show()
     sys.exit(app.exec())
