@@ -4,20 +4,22 @@ import sys
 import matplotlib
 import numpy as np
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QPalette, QIcon, QPixmap, QColor
-from PySide6.QtWidgets import (QApplication, QVBoxLayout, QMainWindow,
-                               QFileDialog, QComboBox, QProxyStyle, QStyle)
+from PySide6.QtGui import QColor, QIcon, QPalette, QPixmap
+from PySide6.QtWidgets import (QApplication, QComboBox, QFileDialog,
+                               QMainWindow, QProxyStyle, QStyle, QVBoxLayout)
 from matplotlib import colors
 from matplotlib import pyplot as plt
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
 
-from fractal_calculation import mandelbrot_julia_set
 from colour_controls import ColourManager
 from config import *
-from fractal_controls import (FractalControls, JuliaParameterControl, ImageRenderer,
-                              CoordinateManager, polar_coordinates)
-from ui_form_Save import Ui_Save
+from fractal_calculation import burning_ship_set, mandelbrot_julia_set
+from fractal_controls import (CoordinateManager, FractalControls,
+                              ImageRenderer, JuliaParameterControl,
+                              polar_coordinates)
 from ui_form_MandelbrotJulia import Ui_MainWindowMandelbrotJulia
+from ui_form_Save import Ui_Save
 
 matplotlib.use('Qt5Agg')
 
@@ -35,7 +37,7 @@ class MplCanvas(FigureCanvasQTAgg):
         super().__init__(self.fig)
 
 
-class CustomToolbar(NavigationToolbar):
+class CustomToolbar(NavigationToolbar2QT):
     def __init__(self, canvas, parent):
         super().__init__(canvas, parent)
         self.parent = parent
@@ -52,8 +54,23 @@ class CustomToolbar(NavigationToolbar):
 
 
 class DialogSave(BaseDialog):
-    def __init__(self, parent=None):
-        super().__init__(Ui_Save, parent)
+    def __init__(self, parent: QMainWindow = None):
+        super().__init__(Ui_Save)
+        ui = self.ui
+        ui.lineEdit_L.editingFinished.connect(lambda: parent.edit_size('L'))
+        ui.lineEdit_H.editingFinished.connect(lambda: parent.edit_size('H'))
+        ui.lineEdit_DPI.editingFinished.connect(parent.edit_size_label)
+        ui.checkBox_withAxes.stateChanged.connect(parent.edit_size_label)
+        ui.checkBox_lockAR.stateChanged.connect(lambda: parent.edit_size('L'))
+
+        ui.lineEdit_L.setText('1000')
+        ui.lineEdit_H.setText('1000')
+        ui.lineEdit_DPI.setText(str(int(parent.fig.dpi)))
+        ui.lineEdit_DPI.setEnabled(False)
+
+        ui.label_Size.setText('Image size: \n1000 \U000000D7 1000 pix.')
+
+        ui.pushButton_Save.clicked.connect(parent.save_dial)
 
 
 class MyWindowMandelbrotJulia(QMainWindow):
@@ -84,22 +101,7 @@ class ImageExporter:
         self.ui.comboBox_SaveLoad.setCurrentIndex(0)
 
     def show_save_image_dialog(self):
-        self.save_image_dialog = DialogSave()
-        self.save_image_dialog.ui.lineEdit_L.editingFinished.connect(lambda: self.edit_size('L'))
-        self.save_image_dialog.ui.lineEdit_H.editingFinished.connect(lambda: self.edit_size('H'))
-        self.save_image_dialog.ui.lineEdit_DPI.editingFinished.connect(self.edit_size_label)
-        self.save_image_dialog.ui.checkBox_withAxes.stateChanged.connect(self.edit_size_label)
-        self.save_image_dialog.ui.checkBox_lockAR.stateChanged.connect(lambda: self.edit_size('L'))
-
-        self.save_image_dialog.ui.lineEdit_L.setText('1000')
-        self.save_image_dialog.ui.lineEdit_H.setText('1000')
-        self.save_image_dialog.ui.lineEdit_DPI.setText(str(int(self.fig.dpi)))
-        self.save_image_dialog.ui.lineEdit_DPI.setEnabled(False)
-
-        self.save_image_dialog.ui.label_Size.setText('Image size: \n1000 \U000000D7 1000 pix.')
-
-        self.save_image_dialog.ui.pushButton_Save.clicked.connect(self.save_dial)
-
+        self.save_image_dialog = DialogSave(self)
         self.save_image_dialog.exec()
 
     def save_dial(self):
@@ -124,19 +126,25 @@ class ImageExporter:
         xmin, xmax = self.ax.get_xlim()
         ymin, ymax = self.ax.get_ylim()
         print(xmin, xmax, ymin, ymax, self.x_c, self.y_c, self.horizon)
-        x, y, z = mandelbrot_julia_set(xmin, xmax, ymin, ymax, x_c=self.x_c, y_c=self.y_c,
-                                       height=img_height, length=img_width,
-                                       n=self.n, horizon=self.horizon, power=self.power,
-                                       mode=self.mode)
+        if self.mode in {'mandelbrot', 'julia'}:
+            data = mandelbrot_julia_set(xmin, xmax, ymin, ymax, x_c=self.x_c, y_c=self.y_c,
+                                        height=img_height, length=img_width,
+                                        n=self.n, horizon=self.horizon, power=self.power,
+                                        mode=self.mode)[2].T
+        elif self.mode in {'burning_ship', 'burning_ship_julia'}:
+            data = burning_ship_set(xmin, xmax, ymin, ymax, x_c=self.x_c, y_c=self.y_c,
+                                    height=img_height, length=img_width,
+                                    n=self.n, horizon=self.horizon, power=self.power,
+                                    mode=self.mode)[2].T
         if self.regime == 'sin':
-            z = (np.sin(z * self.freq + self.offset)) ** 2
+            data = (np.sin(data * self.freq + self.offset)) ** 2
         if self.save_image_dialog.ui.checkBox_withAxes.isChecked():
-            fig, ax = plt.subplots(figsize=(length, height), dpi=dpi)
+            _, ax = plt.subplots(figsize=(length, height), dpi=dpi)
             if not self.shading:
-                ax.imshow(z.T, origin='lower', cmap=self.colourmap, extent=(xmin, xmax, ymin, ymax))
+                ax.imshow(data, origin='lower', cmap=self.colourmap, extent=(xmin, xmax, ymin, ymax))
             else:
                 light = colors.LightSource(azdeg=self.azdeg, altdeg=self.altdeg)
-                data = light.shade(z.T, cmap=plt.get_cmap(self.colourmap), vert_exag=self.vert_exag,
+                data = light.shade(data, cmap=plt.get_cmap(self.colourmap), vert_exag=self.vert_exag,
                                    blend_mode='hsv')
                 ax.imshow(data, extent=(xmin, xmax, ymin, ymax), origin='lower')
             ax.tick_params(labelsize='xx-large')
@@ -146,10 +154,10 @@ class ImageExporter:
             plt.savefig(filename, dpi=dpi)
         else:
             if not self.shading:
-                plt.imsave(filename, z.T, cmap=self.colourmap, origin='lower')
+                plt.imsave(filename, data, cmap=self.colourmap, origin='lower')
             else:
                 light = colors.LightSource(azdeg=self.azdeg, altdeg=self.altdeg)
-                data = light.shade(z.T, cmap=plt.get_cmap(self.colourmap), vert_exag=self.vert_exag,
+                data = light.shade(data, cmap=plt.get_cmap(self.colourmap), vert_exag=self.vert_exag,
                                    blend_mode='hsv')
                 plt.imsave(filename, data, origin='lower')
         QMessageBox.information(self, 'Save File', f'Image is saved to {filename}')
@@ -169,12 +177,13 @@ class ImageExporter:
     def edit_size(self, regime):
         if self.save_image_dialog.ui.checkBox_lockAR.isChecked():
             aspect_ratio = np.diff(self.ax.get_ylim())[0] / np.diff(self.ax.get_xlim())[0]
+            aspect_ratio = abs(aspect_ratio)
             if regime == 'L':
-                ll = int(self.save_image_dialog.ui.lineEdit_L.text())
+                ll = abs(int(self.save_image_dialog.ui.lineEdit_L.text()))
                 hh = round(ll * aspect_ratio)
                 self.save_image_dialog.ui.lineEdit_H.setText(str(hh))
             elif regime == 'H':
-                hh = int(self.save_image_dialog.ui.lineEdit_H.text())
+                hh = abs(int(self.save_image_dialog.ui.lineEdit_H.text()))
                 ll = round(hh / aspect_ratio)
                 self.save_image_dialog.ui.lineEdit_L.setText(str(ll))
             else:
@@ -183,11 +192,16 @@ class ImageExporter:
 
     def save_metadata(self, path):
         metadata = {'mode': self.mode, 'n': self.n, 'horizon': self.horizon, 'power': self.power}
-        if self.mode == 'julia':
+        if self.mode in {'julia', 'burning_ship_julia'}:
             metadata['x_c'] = self.x_c
             metadata['y_c'] = self.y_c
         metadata['lims_x'] = self.ax.get_xlim()
-        metadata['lims_y'] = self.ax.get_ylim()
+        if self.mode in {'mandelbrot', 'julia'}:
+            metadata['lims_y'] = self.ax.get_ylim()
+        elif self.mode in {'burning_ship', 'burning_ship_julia'}:
+            metadata['lims_y'] = self.ax.get_ylim()[::-1]
+        else:
+            raise ValueError('Invalid mode.')
         if self.ui.comboBox_Colourmap.currentIndex() == self.ui.comboBox_Colourmap.count() - 1:
             colourmap = []
             for _, pos, colour in self.user_defined_colourmap:
@@ -214,12 +228,20 @@ class ImageExporter:
         self.no_ax_update = True  # prevent ax_update until setting all the parameters
         self.ui.comboBox_Set.setCurrentText(metadata['mode'])
         self.ui.comboBox_Set.activated.emit(1)
-        if self.mode == 'julia':
+        if self.mode in {'julia', 'burning_ship_julia'}:
             self.c_view = 'xy'
-            metadata['x_c'] = max(-1.0, min(1.0, metadata['x_c']))
-            metadata['y_c'] = max(-1.0, min(1.0, metadata['y_c']))
-            self.ui.horizontalSlider_XC.setValue(self.from_value_to_slider(metadata['x_c'], 'xc'))
-            self.ui.horizontalSlider_YC.setValue(self.from_value_to_slider(metadata['y_c'], 'yc'))
+            slider_xc_val = self.from_value_to_slider(metadata['x_c'], 'xc')
+            slider_yc_val = self.from_value_to_slider(metadata['y_c'], 'yc')
+            if (slider_xc_val < 0 or slider_xc_val > 4000 or
+                    slider_yc_val < 0 or slider_yc_val > 4000):
+                self.invalid_slider = True
+                self.ui.horizontalSlider_XC.setValue(round(slider_xc_val))
+                self.ui.horizontalSlider_YC.setValue(round(slider_yc_val))
+                self.invalid_slider = False
+                self.set_c_from_values(metadata['x_c'], metadata['y_c'], 'xy')
+            else:
+                self.ui.horizontalSlider_XC.setValue(round(slider_xc_val))
+                self.ui.horizontalSlider_YC.setValue(round(slider_yc_val))
         self.ui.lineEdit_N.setText(str(metadata['n']))
         self.ui.lineEdit_H.setText(str(metadata['horizon']))
         self.ui.comboBox_Power.setCurrentText(str(metadata['power']))
@@ -301,9 +323,10 @@ class MJSet(MyWindowMandelbrotJulia, FractalControls, CoordinateManager, JuliaPa
         self.c_view = DEFAULT_C_VIEW
         self.delta_slider_xc = DEFAULT_DELTA_SLIDER_C
         self.delta_slider_yc = DEFAULT_DELTA_SLIDER_C
+        self.invalid_slider = False
         self.cache = None
 
-        # Initialize dialogs and toolbar
+        # Initialize dialogues and toolbar
         self.main_layout = None
         self.set_limits_dialog, self.save_image_dialog = None, None
         self.set_c_dialog, self.shading_dialog = None, None
@@ -318,7 +341,7 @@ class MJSet(MyWindowMandelbrotJulia, FractalControls, CoordinateManager, JuliaPa
         self.ui.label_freq.setVisible(False)
         self.ui.label_offset.setVisible(False)
         self.ui.lineEdit_offset.setVisible(False)
-        self.ui.comboBox_Set.addItems(['mandelbrot', 'julia'])
+        self.ui.comboBox_Set.addItems(['mandelbrot', 'julia', 'burning_ship', 'burning_ship_julia'])
         self.ui.comboBox_regime.addItems(['standard', 'sin'])
         self.ui.comboBox_Power.addItems([str(i) for i in range(2, 9)])
         self.ui.comboBox_viewC.addItems(['ReC, ImC', '\U000003C1, \U000003D5'])
@@ -346,11 +369,10 @@ class MJSet(MyWindowMandelbrotJulia, FractalControls, CoordinateManager, JuliaPa
         self.application.styleHints().colorSchemeChanged.connect(
             lambda: QTimer.singleShot(100, self.colour_scheme_changed))
 
+        # origin='lower' is used to match the image coordinates with the plot coordinates
         self.ax.imshow([[0]], origin='lower', cmap=self.colourmap)  # Empty initial image
         self.ax.callbacks.connect('ylim_changed', self.ax_update)
         self.ax.set(xlim=(self.xmin_0, self.xmax_0), ylim=(self.ymin_0, self.ymax_0))
-        im = self.ax.images[0]
-        im.set(clim=(im.get_array().min(), im.get_array().max()))
         self.fig.tight_layout()
 
         self.toolbar = CustomToolbar(self.sc, self)
@@ -380,8 +402,8 @@ class MJSet(MyWindowMandelbrotJulia, FractalControls, CoordinateManager, JuliaPa
         self.ui.horizontalSlider_XC.setValue(round(ini_slider_xc_val))
         self.ui.horizontalSlider_YC.setValue(round(ini_slider_yc_val))
 
-        self.ui.label_C.setText(
-            f'C = {self.x_c:.4f} {self.y_c:+.4f}\U0001D456 = {self.rho_c:.4f}\U000022C5exp({self.phi_c:.4f}\U0001D456)')
+        self.ui.label_C.setText(f'C = {self.x_c:.4f} {self.y_c:+.4f}\U0001D456 = '
+                                f'{self.rho_c:.4f}\U000022C5exp({self.phi_c:.4f}\U0001D456)')
 
     def connect_signals(self):
         """Connects signals to their respective slots."""
@@ -401,7 +423,7 @@ class MJSet(MyWindowMandelbrotJulia, FractalControls, CoordinateManager, JuliaPa
         self.ui.horizontalSlider_YC.valueChanged.connect(self.set_c_from_slider)
 
         # Button actions
-        for button, action in [
+        for button, action in (
             (self.ui.pushButton_zoom_plus, lambda: self.zoom('plus')),
             (self.ui.pushButton_zoom_minus, lambda: self.zoom('minus')),
             (self.ui.pushButton_NewLims, self.show_set_limits_dialog),
@@ -413,7 +435,7 @@ class MJSet(MyWindowMandelbrotJulia, FractalControls, CoordinateManager, JuliaPa
             (self.ui.pushButton_removeShading, self.remove_shading),
             (self.ui.pushButton_Rebuild, self.rebuild_im),
             (self.ui.pushButton_Reset, self.reset_im),
-        ]:
+        ):
             button.clicked.connect(action)
 
     def colour_scheme_changed(self):

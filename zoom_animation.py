@@ -11,7 +11,7 @@ import numpy as np
 from matplotlib import colors
 
 import config as cfg
-from fractal_calculation import mandelbrot_julia_set
+from fractal_calculation import mandelbrot_julia_set, burning_ship_set
 
 
 def make_colourmap(colours_data):
@@ -52,7 +52,12 @@ def make_frame(i, scale, xmin_1, xmax_1, ymin_1, ymax_1, xmin_2, xmax_2, ymin_2,
 
     print(f'Frame {i + 1} / {frames}')
 
-    data = mandelbrot_julia_set(xmin_3, xmax_3, ymin_3, ymax_3, horizon=horizon,
+    if mode in {'mandelbrot', 'julia'}:
+        data = mandelbrot_julia_set(xmin_3, xmax_3, ymin_3, ymax_3, horizon=horizon,
+                                    length=length, height=height, n=n,
+                                    x_c=x_c, y_c=y_c, power=power, mode=mode)[2].T
+    elif mode in {'burning_ship', 'burning_ship_julia'}:
+        data = burning_ship_set(xmin_3, xmax_3, ymin_3, ymax_3, horizon=horizon,
                                 length=length, height=height, n=n,
                                 x_c=x_c, y_c=y_c, power=power, mode=mode)[2].T
     if c_regime == 'standard':
@@ -64,7 +69,7 @@ def make_frame(i, scale, xmin_1, xmax_1, ymin_1, ymax_1, xmin_2, xmax_2, ymin_2,
         data = light.shade(data, cmap=plt.get_cmap(colourmap), vert_exag=vert_exag,
                            blend_mode='hsv')
     plt.imsave(path + f'image_{i:d}.png', data,
-               cmap=colourmap if not shading else None, origin='lower')
+               cmap=colourmap if not shading else None)  # , origin='lower')
 
 
 def validate_aspect_ratio(delta_x_1, delta_y_1, delta_x_2, delta_y_2, length, height):
@@ -233,13 +238,15 @@ if __name__ == '__main__':
     parser.add_argument('--y_c', type=float, default=cfg.DEFAULT_Y_C,
                         help=f'Imaginary part of the Julia set C-parameter (default: {cfg.DEFAULT_Y_C}).')
     parser.add_argument('-m', '--mode', type=str, default=cfg.DEFAULT_MODE,
-                        choices=['mandelbrot', 'julia'],
-                        help=f"The fractal type: 'mandelbrot' or 'julia' (default: {cfg.DEFAULT_MODE}).")
+                        choices=['mandelbrot', 'julia', 'burning_ship', 'burning_ship_julia'],
+                        metavar='mandelbrot|julia|burning_ship|burning_ship_julia',
+                        help="The fractal type: 'mandelbrot', 'julia', 'burning_ship or 'burning_ship_julia' "
+                             f"(default: {cfg.DEFAULT_MODE}).")
     parser.add_argument('-p', '--power', type=int, default=cfg.DEFAULT_POWER,
                         choices=[2, 3, 4, 5, 6, 7, 8],
                         help=f'Power/exponent used in the fractal formula: 2...8 (default: {cfg.DEFAULT_POWER}).')
     parser.add_argument('--n_regime', type=str, default='dynamic',
-                        choices=['dynamic', 'static'],
+                        choices=['dynamic', 'static'], metavar='dynamic|static',
                         help='Dynamic or static number of iterations for the fractal calculation (default: dynamic).')
     parser.add_argument('--n_i', type=int, default=100,
                         help="Number of iterations for the initial fractal (default: 100). "
@@ -263,13 +270,13 @@ if __name__ == '__main__':
                         help=f'Name of the colourmap to use or the path to a JSON file containing '
                              f'a colourmap definition (default: {cfg.DEFAULT_COLOURMAP}).')
     parser.add_argument('--c_regime', type=str, default=cfg.DEFAULT_REGIME,
-                        choices=['standard', 'sin'],
+                        choices=['standard', 'sin'], metavar='standard|sin',
                         help=f"The colouring regime: 'standard' or 'sin' (default: {cfg.DEFAULT_REGIME}).")
     parser.add_argument('-fr', '--freq', type=float, default=cfg.DEFAULT_FREQ,
                         help=f"Frequency for 'sin' colour regime (default: {cfg.DEFAULT_FREQ}).")
     parser.add_argument('-of', '--offset', type=float, default=cfg.DEFAULT_OFFSET,
                         help=f"Offset for 'sin' colour regime (default: {cfg.DEFAULT_OFFSET}).")
-    parser.add_argument('-s', '--shading', action='store_true',
+    parser.add_argument('-s', '--shading', action='store_true', default=False,
                         help='Enable 3D-like surface shading (hillshading).')
     parser.add_argument('-az', '--azdeg', type=float, default=315,
                         help='Azimuth angle in degrees for light source direction in shading (default: 315).')
@@ -283,8 +290,12 @@ if __name__ == '__main__':
     if args.horizon is None:
         if args.mode == 'mandelbrot':
             args.horizon = cfg.DEFAULT_HORIZON_MANDELBROT
-        else:
+        elif args.mode == 'julia':
             args.horizon = cfg.DEFAULT_HORIZON_JULIA
+        elif args.mode in {'burning_ship', 'burning_ship_julia'}:
+            args.horizon = cfg.DEFAULT_HORIZON_BURNING_SHIP
+        else:
+            raise ValueError('Invalid mode.')
     if args.n_f is None:
         if args.n_regime == 'static':
             args.n_f = 1000

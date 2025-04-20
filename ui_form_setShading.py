@@ -53,6 +53,7 @@ class Ui_setShading(object):
 
         self.label_5 = QLabel(setShading)
         self.label_5.setObjectName(u"label_5")
+        self.label_5.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.gridLayout.addWidget(self.label_5, 4, 0, 1, 2, Qt.AlignmentFlag.AlignHCenter)
 
@@ -93,7 +94,8 @@ class Ui_setShading(object):
         self.pushButton_setShading.setText(QCoreApplication.translate("setShading", u"Set Shading", None))
         self.label_2.setText(QCoreApplication.translate("setShading", u"Light Source position \n"
                                                                       "(in deg):", None))
-        self.label_5.setText(QCoreApplication.translate("setShading", u"Exaggeration of elevation:", None))
+        self.label_5.setText(QCoreApplication.translate("setShading", u"Exaggeration \n"
+                                                                      "of elevation:", None))
         self.label_3.setText(QCoreApplication.translate("setShading", u"Azimuth:", None))
         self.label_4.setText(QCoreApplication.translate("setShading", u"Altitude:", None))
     # retranslateUi

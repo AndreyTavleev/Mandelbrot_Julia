@@ -12,7 +12,7 @@ import numpy as np
 from matplotlib import colors
 
 import config as cfg
-from fractal_calculation import mandelbrot_julia_set
+from fractal_calculation import mandelbrot_julia_set, burning_ship_set
 
 
 def make_colourmap(colours_data):
@@ -32,14 +32,21 @@ def make_colourmap(colours_data):
     return colourmap
 
 
-def make_frame(i, xmin, xmax, ymin, ymax, x_c, y_c, n, power, horizon, length, height,
+def make_frame(i, xmin, xmax, ymin, ymax, x_c, y_c, mode, n, power, horizon, length, height,
                colourmap, c_regime, freq, offset, shading, azdeg, altdeg, vert_exag, path, frames):
     """Generate a single frame for the animation."""
     print(f'Frame {i + 1} / {frames}')
 
-    data = mandelbrot_julia_set(xmin, xmax, ymin, ymax, horizon=horizon,
+    if mode == 'julia':
+        data = mandelbrot_julia_set(xmin, xmax, ymin, ymax, horizon=horizon,
+                                    length=length, height=height, n=n,
+                                    x_c=x_c, y_c=y_c, power=power, mode=mode)[2].T
+    elif mode == 'burning_ship_julia':
+        data = burning_ship_set(xmin, xmax, ymin, ymax, horizon=horizon,
                                 length=length, height=height, n=n,
-                                x_c=x_c, y_c=y_c, power=power, mode='julia')[2].T
+                                x_c=x_c, y_c=y_c, power=power, mode=mode)[2].T
+    else:
+        raise ValueError(f"Invalid mode: {mode}. Choose 'julia' or 'burning_ship_julia'.")
     if c_regime == 'standard':
         pass
     elif c_regime == 'sin':
@@ -104,7 +111,7 @@ def generate_video(path, name, fps=30):
     print(f"Video saved as {path}{name}")
 
 
-def main(metadata, xmin, xmax, ymin, ymax, rho, phi_min, phi_max, n, power,
+def main(metadata, xmin, xmax, ymin, ymax, rho, phi_min, phi_max, mode, n, power,
          horizon, frames, length, height, colourmap,
          c_regime, freq, offset, shading, azdeg, altdeg, vert_exag, threads, path):
     """Main function to generate the rotational animation of a Julia set."""
@@ -116,14 +123,15 @@ def main(metadata, xmin, xmax, ymin, ymax, rho, phi_min, phi_max, n, power,
         xmin, xmax = metadata['lims_x']
         ymin, ymax = metadata['lims_y']
         mode = metadata['mode']
-        if mode == 'julia':
+        if mode in {'julia', 'burning_ship_julia'}:
             rho = np.sqrt(metadata['x_c'] ** 2 + metadata['y_c'] ** 2)
         else:
             if rho:
-                warnings.warn("Metadata file contains Mandelbrot set. The 'rho' parameter "
-                              "has been set separately by user.")
+                warnings.warn("Metadata file contains Mandelbrot or Burning Ship set. "
+                              "The 'rho' parameter has been set separately by user.")
             else:
-                warnings.warn("Metadata file contains Mandelbrot set. Use default 'rho' parameter.")
+                warnings.warn("Metadata file contains Mandelbrot or Burning Ship set. "
+                              "Use default 'rho' parameter.")
         horizon = metadata['horizon']
         power = metadata['power']
         shading = metadata['shading']
@@ -150,7 +158,8 @@ def main(metadata, xmin, xmax, ymin, ymax, rho, phi_min, phi_max, n, power,
 
     result = [pool.apply_async(make_frame, kwds={'i': i, 'xmin': xmin, 'xmax': xmax, 'ymin': ymin, 'ymax': ymax,
                                                  'x_c': x_cc, 'y_c': y_cc, 'n': n, 'power': power, 'horizon': horizon,
-                                                 'length': length, 'height': height, 'colourmap': colourmap,
+                                                 'mode': mode, 'length': length, 'height': height, 
+                                                 'colourmap': colourmap,
                                                  'c_regime': c_regime, 'freq': freq, 'offset': offset,
                                                  'shading': shading, 'azdeg': azdeg, 'altdeg': altdeg,
                                                  'vert_exag': vert_exag, 'path': path, 'frames': frames})
@@ -185,6 +194,10 @@ if __name__ == '__main__':
                         help="Minimum argument 'phi' of the Julia set C-parameter (default: 0.0).")
     parser.add_argument('--phi_max', type=float, default=2 * np.pi,
                         help="Maximum argument 'phi' of the Julia set C-parameter (default: 2pi).")
+    parser.add_argument('-m', '--mode', type=str, default='julia',
+                        choices=['julia', 'burning_ship_julia'],
+                        metavar='julia|burning_ship_julia',
+                        help="The fractal type: 'julia' or 'burning_ship_julia' (default: 'julia').")
     parser.add_argument('--n', type=float, default=100,
                         help="Iteration limit for the fractal calculation (default: 100).")
     parser.add_argument('-p', '--power', type=int, default=cfg.DEFAULT_POWER,
@@ -203,13 +216,13 @@ if __name__ == '__main__':
                         help=f'Name of the colourmap to use or the path to a JSON file containing '
                              f'a colourmap definition (default: {cfg.DEFAULT_COLOURMAP}).')
     parser.add_argument('--c_regime', type=str, default=cfg.DEFAULT_REGIME,
-                        choices=['standard', 'sin'],
+                        choices=['standard', 'sin'], metavar='standard|sin',
                         help=f"The colouring regime: 'standard' or 'sin' (default: {cfg.DEFAULT_REGIME}).")
     parser.add_argument('-fr', '--freq', type=float, default=cfg.DEFAULT_FREQ,
                         help=f"Frequency for 'sin' colour regime (default: {cfg.DEFAULT_FREQ}).")
     parser.add_argument('-of', '--offset', type=float, default=cfg.DEFAULT_OFFSET,
                         help=f"Offset for 'sin' colour regime (default: {cfg.DEFAULT_OFFSET}).")
-    parser.add_argument('-s', '--shading', action='store_true',
+    parser.add_argument('-s', '--shading', action='store_true', default=False,
                         help='Enable 3D-like surface shading (hillshading).')
     parser.add_argument('-az', '--azdeg', type=float, default=315,
                         help='Azimuth angle in degrees for light source direction in shading (default: 315).')

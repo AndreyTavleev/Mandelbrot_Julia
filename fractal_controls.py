@@ -5,10 +5,10 @@ from PySide6.QtCore import QSize
 from matplotlib import colors
 from matplotlib import pyplot as plt
 
-from fractal_calculation import mandelbrot_julia_set
 from config import *
-from ui_form_setLimits import Ui_setLimits
+from fractal_calculation import burning_ship_set, mandelbrot_julia_set
 from ui_form_setC import Ui_setC
+from ui_form_setLimits import Ui_setLimits
 
 
 def cartesian_coordinates(rho_c, phi_c):
@@ -26,12 +26,37 @@ def polar_coordinates(x_c, y_c):
 
 class DialogSetC(BaseDialog):
     def __init__(self, parent=None):
-        super().__init__(Ui_setC, parent)
+        super().__init__(Ui_setC)
+        ui = self.ui
+        ui.label_phiC.setText('Argument, \U000003D5:')
+        ui.label_rhoC.setText('Modulus, \U000003C1:')
+        ui.pushButton_RhoPhiC.setText('Set \U000003C1 and \U000003D5')
+        ui.pushButto_ReImC.clicked.connect(lambda: parent.set_c('xy'))
+        ui.pushButton_RhoPhiC.clicked.connect(lambda: parent.set_c('rhophi'))
+
+        ui.lineEdit_ReC.setText(f'{parent.x_c:.4f}')
+        ui.lineEdit_ImC.setText(f'{parent.y_c:.4f}')
+        ui.lineEdit_rhoC.setText(f'{parent.rho_c:.4f}')
+        ui.lineEdit_phiC.setText(f'{parent.phi_c:.4f}')
 
 
 class DialogSetLimits(BaseDialog):
     def __init__(self, parent=None):
-        super().__init__(Ui_setLimits, parent)
+        super().__init__(Ui_setLimits)
+        ui = self.ui
+        xmin, xmax = parent.ax.get_xlim()
+        ymin, ymax = parent.ax.get_ylim()
+        x_c = xmin + (xmax - xmin) / 2
+        y_c = ymin + (ymax - ymin) / 2
+        ui.lineEdit_X.setText(f'{xmin:.16f}, {xmax:.16f}')
+        ui.lineEdit_Y.setText(f'{ymin:.16f}, {ymax:.16f}')
+        ui.lineEdit_XC.setText(f'{x_c:.16f}')
+        ui.lineEdit_YC.setText(f'{y_c:.16f}')
+        ui.lineEdit_deltaX.setText(f'{xmax - xmin:.16f}')
+        ui.lineEdit_deltaY.setText(f'{ymax - ymin:.16f}')
+
+        ui.pushButton_SetLim.clicked.connect(lambda: parent.set_limits('xy'))
+        ui.pushButton_SetC.clicked.connect(lambda: parent.set_limits('centre'))
 
 
 class FractalControls:
@@ -57,9 +82,19 @@ class FractalControls:
             print('x_c, y_c =', self.x_c, self.y_c)
         print('n, diff =', n, xmax - xmin, ymax - ymin)
         print(xmin, xmax, ymin, ymax, n, self.horizon, self.length, self.height)
-        data = mandelbrot_julia_set(xmin, xmax, ymin, ymax, horizon=self.horizon,
+        # Transpose data for correct synchronisation with imshow
+        if self.mode in {'mandelbrot', 'julia'}:
+            data = mandelbrot_julia_set(xmin, xmax, ymin, ymax, horizon=self.horizon,
+                                        length=self.length, height=self.height, n=n,
+                                        x_c=self.x_c, y_c=self.y_c, power=self.power, mode=self.mode)[2].T
+        elif self.mode in {'burning_ship', 'burning_ship_julia'}:
+            data = burning_ship_set(xmin, xmax, ymin, ymax, horizon=self.horizon,
                                     length=self.length, height=self.height, n=n,
                                     x_c=self.x_c, y_c=self.y_c, power=self.power, mode=self.mode)[2].T
+        if self.mode in {'burning_ship', 'burning_ship_julia'} and not self.ax.yaxis_inverted():
+            self.ax.invert_yaxis()
+        if self.mode in {'mandelbrot', 'julia'} and self.ax.yaxis_inverted():
+            self.ax.invert_yaxis()
         if self.regime == 'sin':
             self.cache = data
             data = (np.sin(data * self.freq + self.offset)) ** 2
@@ -83,12 +118,22 @@ class FractalControls:
         if self.slider_move:
             return self.ui.horizontalSlider_N.value()
         else:
-            xmin, xmax, ymin, ymax = np.float64([*self.ax.get_xlim(), *self.ax.get_ylim()])
+            xmin, xmax = self.ax.get_xlim()
             zoom = (self.xmax_0 - self.xmin_0) / (xmax - xmin)
             if zoom > 1:
-                res = int(100 * (1 + math.log10(zoom)))
+                if self.mode in {'mandelbrot', 'julia', 'burning_ship_julia'}:
+                    res = int(100 * (1 + math.log10(zoom)))
+                elif self.mode in {'burning_ship'}:
+                    res = int(50 * (1 + 0.4 * math.log10(zoom)))
+                else:
+                    raise ValueError('Invalid mode.')
             else:
-                res = 100
+                if self.mode in {'mandelbrot', 'julia', 'burning_ship_julia'}:
+                    res = 100
+                elif self.mode in {'burning_ship'}:
+                    res = 50
+                else:
+                    raise ValueError('Invalid mode.')
             self.ui.lineEdit_N.setText(f'{res}')
             self.no_ax_update = True
             self.ui.horizontalSlider_N.setValue(res)
@@ -99,11 +144,18 @@ class FractalControls:
     def reset_n(self):
         self.slider_move = False
         self.rebuild = False
-        if self.n == self.ui.horizontalSlider_N.value():
+        nn = self.n
+        if nn == self.ui.horizontalSlider_N.value():
             self.ax_update()
-        else:
-            self.ui.horizontalSlider_N.setValue(self.n)
+        elif nn > self.ui.horizontalSlider_N.value():
+            self.ui.horizontalSlider_N.setValue(nn)
             self.slider_move = False
+        else:
+            self.no_ax_update = True
+            self.ui.horizontalSlider_N.setValue(100)
+            self.no_ax_update = False
+            self.slider_move = False
+            self.ax_update()
 
     def change_n(self):
         self.slider_move = True
@@ -122,26 +174,44 @@ class FractalControls:
 
 
 class JuliaParameterControl:
-    def set_c_from_slider(self):
-        if self.c_view == 'xy':
-            i = self.ui.horizontalSlider_XC.value()
-            self.x_c = -1 + self.delta_slider_xc * i
-            i = self.ui.horizontalSlider_YC.value()
-            self.y_c = -1 + self.delta_slider_yc * i
+    def set_c_from_values(self, a, b, regime):
+        if regime == 'xy':
+            self.x_c = a
+            self.y_c = b
             self.rho_c, self.phi_c = polar_coordinates(self.x_c, self.y_c)
-        elif self.c_view == 'rhophi':
-            i = self.ui.horizontalSlider_XC.value()
-            self.rho_c = self.delta_slider_xc * i
-            i = self.ui.horizontalSlider_YC.value()
-            self.phi_c = self.delta_slider_yc * i
+        elif regime == 'rhophi':
+            self.rho_c = a
+            self.phi_c = b
             self.x_c, self.y_c = cartesian_coordinates(self.rho_c, self.phi_c)
         else:
-            raise ValueError('Invalid c_view.')
+            raise ValueError('Invalid regime.')
         self.ui.label_C.setText(
             f'C = {self.x_c:.4f} {self.y_c:+.4f}\U0001D456 = '
             f'{self.rho_c:.4f}\U000022C5exp({self.phi_c:.4f}\U0001D456)')
         if not self.no_ax_update:
             self.ax_update()
+
+    def set_c_from_slider(self, value):
+        if self.invalid_slider:
+            return
+        if self.c_view == 'xy':
+            if self.sender() == self.ui.horizontalSlider_XC:
+                self.x_c = -1 + self.delta_slider_xc * value
+            elif self.sender() == self.ui.horizontalSlider_YC:
+                self.y_c = -1 + self.delta_slider_yc * value
+            else:
+                raise ValueError('Invalid sender.')
+            self.set_c_from_values(self.x_c, self.y_c, 'xy')
+        elif self.c_view == 'rhophi':
+            if self.sender() == self.ui.horizontalSlider_XC:
+                self.rho_c = self.delta_slider_xc * value
+            elif self.sender() == self.ui.horizontalSlider_YC:
+                self.phi_c = self.delta_slider_yc * value
+            else:
+                raise ValueError('Invalid sender.')
+            self.set_c_from_values(self.rho_c, self.phi_c, 'rhophi')
+        else:
+            raise ValueError('Invalid c_view.')
 
     def change_c_view(self):
         c_view_old = self.c_view
@@ -170,10 +240,10 @@ class JuliaParameterControl:
             slider_yc_val = self.from_value_to_slider(self.phi_c, 'phi')
         else:
             raise ValueError('Invalid c_view.')
-        self.no_ax_update = True
+        self.invalid_slider = True  # Prevent ax_update and C changing
         self.ui.horizontalSlider_XC.setValue(round(slider_xc_val))
         self.ui.horizontalSlider_YC.setValue(round(slider_yc_val))
-        self.no_ax_update = False
+        self.invalid_slider = False
 
     def from_value_to_slider(self, value, regime):
         if regime == 'xc':
@@ -200,18 +270,7 @@ class JuliaParameterControl:
         self.ui.horizontalSlider_YC.setValue(round(ini_slider_yc_val))
 
     def show_set_c_dialog(self):
-        self.set_c_dialog = DialogSetC()
-        self.set_c_dialog.ui.label_phiC.setText('Argument, \U000003D5:')
-        self.set_c_dialog.ui.label_rhoC.setText('Modulus, \U000003C1:')
-        self.set_c_dialog.ui.pushButton_RhoPhiC.setText('Set \U000003C1 and \U000003D5')
-        self.set_c_dialog.ui.pushButto_ReImC.clicked.connect(lambda: self.set_c('xy'))
-        self.set_c_dialog.ui.pushButton_RhoPhiC.clicked.connect(lambda: self.set_c('rhophi'))
-
-        self.set_c_dialog.ui.lineEdit_ReC.setText(f'{self.x_c:.4f}')
-        self.set_c_dialog.ui.lineEdit_ImC.setText(f'{self.y_c:.4f}')
-        self.set_c_dialog.ui.lineEdit_rhoC.setText(f'{self.rho_c:.4f}')
-        self.set_c_dialog.ui.lineEdit_phiC.setText(f'{self.phi_c:.4f}')
-
+        self.set_c_dialog = DialogSetC(self)
         self.set_c_dialog.exec()
 
     def set_c(self, regime):
@@ -241,8 +300,17 @@ class JuliaParameterControl:
         else:
             raise ValueError('Invalid c_view.')
 
-        self.ui.horizontalSlider_XC.setValue(round(slider_xc_val))
-        self.ui.horizontalSlider_YC.setValue(round(slider_yc_val))
+        if (slider_xc_val < 0 or slider_xc_val > 4000 or
+                slider_yc_val < 0 or slider_yc_val > 4000):
+            self.invalid_slider = True
+            self.ui.horizontalSlider_XC.setValue(round(slider_xc_val))
+            self.ui.horizontalSlider_YC.setValue(round(slider_yc_val))
+            self.invalid_slider = False
+            self.set_c_from_values(self.x_c, self.y_c, 'xy')
+        else:
+            self.ui.horizontalSlider_XC.setValue(round(slider_xc_val))
+            self.ui.horizontalSlider_YC.setValue(round(slider_yc_val))
+
         self.set_c_dialog.accept()
         self.set_c_dialog.deleteLater()
         self.set_c_dialog = None
@@ -288,6 +356,10 @@ class ImageRenderer:
             self.horizon = DEFAULT_HORIZON_MANDELBROT
         elif self.mode == 'julia':
             self.horizon = DEFAULT_HORIZON_JULIA
+        elif self.mode in {'burning_ship', 'burning_ship_julia'}:
+            self.horizon = DEFAULT_HORIZON_BURNING_SHIP
+        else:
+            raise ValueError('Invalid mode.')
         self.reset_n()
         self.ui.lineEdit_H.setText(f'{self.horizon:.1e}')
 
@@ -302,6 +374,14 @@ class ImageRenderer:
         elif self.mode == 'mandelbrot':
             self.ui.frame.setMinimumSize(QSize(630, 630))
             self.ui.groupbox_C.setVisible(False)
+        elif self.mode == 'burning_ship':
+            self.ui.frame.setMinimumSize(QSize(630, 630))
+            self.ui.groupbox_C.setVisible(False)
+        elif self.mode == 'burning_ship_julia':
+            self.ui.frame.setMinimumSize(QSize(630, 517))
+            self.ui.groupbox_C.setVisible(True)
+        else:
+            raise ValueError('Invalid mode.')
         if not self.isFullScreen():
             self.adjustSize()
         self.power = DEFAULT_POWER
@@ -318,6 +398,12 @@ class CoordinateManager:
             return LIMS_MANDELBROT_DICT[str(self.power)][0]
         elif self.mode == 'julia':
             return -2.0
+        elif self.mode == 'burning_ship':
+            return LIMS_BURNING_SHIP_DICT[str(self.power)][0]
+        elif self.mode == 'burning_ship_julia':
+            return LIMS_BURNING_SHIP_JULIA_DICT[str(self.power)][0]
+        else:
+            raise ValueError('Invalid mode.')
 
     @property
     def xmax_0(self):
@@ -325,6 +411,12 @@ class CoordinateManager:
             return LIMS_MANDELBROT_DICT[str(self.power)][1]
         elif self.mode == 'julia':
             return 2.0
+        elif self.mode == 'burning_ship':
+            return LIMS_BURNING_SHIP_DICT[str(self.power)][1]
+        elif self.mode == 'burning_ship_julia':
+            return LIMS_BURNING_SHIP_JULIA_DICT[str(self.power)][1]
+        else:
+            raise ValueError('Invalid mode.')
 
     @property
     def ymin_0(self):
@@ -332,6 +424,12 @@ class CoordinateManager:
             return LIMS_MANDELBROT_DICT[str(self.power)][2]
         elif self.mode == 'julia':
             return -1.3
+        elif self.mode == 'burning_ship':
+            return LIMS_BURNING_SHIP_DICT[str(self.power)][2]
+        elif self.mode == 'burning_ship_julia':
+            return LIMS_BURNING_SHIP_JULIA_DICT[str(self.power)][2]
+        else:
+            raise ValueError('Invalid mode.')
 
     @property
     def ymax_0(self):
@@ -339,6 +437,12 @@ class CoordinateManager:
             return LIMS_MANDELBROT_DICT[str(self.power)][3]
         elif self.mode == 'julia':
             return 1.3
+        elif self.mode == 'burning_ship':
+            return LIMS_BURNING_SHIP_DICT[str(self.power)][3]
+        elif self.mode == 'burning_ship_julia':
+            return LIMS_BURNING_SHIP_JULIA_DICT[str(self.power)][3]
+        else:
+            raise ValueError('Invalid mode.')
 
     def zoom(self, regime):
         xmin, xmax = self.ax.get_xlim()
@@ -361,20 +465,7 @@ class CoordinateManager:
         self.ax.set_ylim(self.ymin_0, self.ymax_0)
 
     def show_set_limits_dialog(self):
-        self.set_limits_dialog = DialogSetLimits()
-        xmin, xmax = self.ax.get_xlim()
-        ymin, ymax = self.ax.get_ylim()
-        x_c = xmin + (xmax - xmin) / 2
-        y_c = ymin + (ymax - ymin) / 2
-        self.set_limits_dialog.ui.lineEdit_X.setText(f'{xmin:.16f}, {xmax:.16f}')
-        self.set_limits_dialog.ui.lineEdit_Y.setText(f'{ymin:.16f}, {ymax:.16f}')
-        self.set_limits_dialog.ui.lineEdit_XC.setText(f'{x_c:.16f}')
-        self.set_limits_dialog.ui.lineEdit_YC.setText(f'{y_c:.16f}')
-        self.set_limits_dialog.ui.lineEdit_deltaX.setText(f'{xmax - xmin:.16f}')
-        self.set_limits_dialog.ui.lineEdit_deltaY.setText(f'{ymax - ymin:.16f}')
-
-        self.set_limits_dialog.ui.pushButton_SetLim.clicked.connect(lambda: self.set_limits('xy'))
-        self.set_limits_dialog.ui.pushButton_SetC.clicked.connect(lambda: self.set_limits('centre'))
+        self.set_limits_dialog = DialogSetLimits(self)
         self.set_limits_dialog.exec()
 
     def set_limits(self, regime):

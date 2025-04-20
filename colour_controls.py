@@ -13,15 +13,30 @@ from ui_form_setShading import Ui_setShading
 
 class DialogSetShading(BaseDialog):
     def __init__(self, parent=None):
-        super().__init__(Ui_setShading, parent)
+        super().__init__(Ui_setShading)
+        ui = self.ui
+        if parent.shading:
+            ui.lineEdit_azimuth.setText(str(parent.azdeg))
+            ui.lineEdit_altitude.setText(str(parent.altdeg))
+            ui.lineEdit_vert_exag.setText(str(parent.vert_exag))
+        else:
+            ui.lineEdit_azimuth.setText('315')
+            ui.lineEdit_altitude.setText('5')
+            ui.lineEdit_vert_exag.setText('1')
+        ui.pushButton_setShading.clicked.connect(parent.set_shading)
 
 
 class DialogSetGradient(BaseDialog):
     def __init__(self, points=None, parent=None):
-        super().__init__(Ui_setGradient, parent)
+        super().__init__(Ui_setGradient)
+        ui = self.ui
         self.GradWidget = Gradient(points)
-        self.ui.gridLayout.removeWidget(self.ui.GradWidget)
-        self.ui.gridLayout.addWidget(self.GradWidget, 1, 0, 1, 4)
+        ui.gridLayout.removeWidget(ui.GradWidget)
+        ui.gridLayout.addWidget(self.GradWidget, 1, 0, 1, 4)
+        ui.pushButton_Apply.clicked.connect(parent.create_and_set_colourmap)
+        ui.pushButton_Reverse.clicked.connect(self.GradWidget.reverse_gradient)
+        ui.pushButton_Save.clicked.connect(parent.save_colourmap)
+        ui.pushButton_Load.clicked.connect(parent.load_colourmap)
 
 
 class Gradient(QWidget):
@@ -179,12 +194,7 @@ class Gradient(QWidget):
 class ColourManager:
     def colourmap_update(self):
         if self.ui.comboBox_Colourmap.currentIndex() == self.ui.comboBox_Colourmap.count() - 1:
-            self.gradient_dialog = DialogSetGradient(self.user_defined_colourmap)
-            self.gradient_dialog.ui.pushButton_Apply.clicked.connect(self.create_and_set_colourmap)
-            self.gradient_dialog.ui.pushButton_Reverse.clicked.connect(
-                self.gradient_dialog.GradWidget.reverse_gradient)
-            self.gradient_dialog.ui.pushButton_Save.clicked.connect(self.save_colourmap)
-            self.gradient_dialog.ui.pushButton_Load.clicked.connect(self.load_colourmap)
+            self.gradient_dialog = DialogSetGradient(self.user_defined_colourmap, self)
             self.gradient_dialog.show()
         else:
             self.colourmap = self.ui.comboBox_Colourmap.currentText()
@@ -220,20 +230,11 @@ class ColourManager:
         fname = QFileDialog.getOpenFileName(self, caption='Choose a filename to load from',
                                             filter='json(*.json)')[0]
         if fname:
-            self.colourmap = self.gradient_dialog.GradWidget.load_from_file(fname)
+            self.gradient_dialog.GradWidget.load_from_file(fname)
 
     def show_set_shading_dialog(self):
-        self.shading_dialog = DialogSetShading()
-        if self.shading:
-            self.shading_dialog.ui.lineEdit_azimuth.setText(str(self.azdeg))
-            self.shading_dialog.ui.lineEdit_altitude.setText(str(self.altdeg))
-            self.shading_dialog.ui.lineEdit_vert_exag.setText(str(self.vert_exag))
-        else:
-            self.shading_dialog.ui.lineEdit_azimuth.setText('315')
-            self.shading_dialog.ui.lineEdit_altitude.setText('5')
-            self.shading_dialog.ui.lineEdit_vert_exag.setText('1')
-        self.shading_dialog.ui.pushButton_setShading.clicked.connect(self.set_shading)
-        self.shading_dialog.exec()
+        self.shading_dialog = DialogSetShading(self)
+        self.shading_dialog.show()
 
     def set_shading(self):
         self.shading = True
@@ -244,9 +245,6 @@ class ColourManager:
         self.altdeg = max(0.0, min(90.0, self.altdeg))
         self.vert_exag = float(self.shading_dialog.ui.lineEdit_vert_exag.text())
         self.ax_update()
-        self.shading_dialog.accept()
-        self.shading_dialog.deleteLater()
-        self.shading_dialog = None
 
     def remove_shading(self):
         if not self.shading:
