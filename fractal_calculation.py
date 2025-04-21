@@ -168,37 +168,44 @@ def fractal_set(xmin, xmax, ymin, ymax, x_c, y_c, height, length, n, horizon, po
     r2 = np.linspace(ymin, ymax, height)
     n3 = np.empty((length, height))
 
-    init_c_map = {
-        'mandelbrot': _init_c_mandelbrot_burning_ship,
-        'julia': _init_c_julia_burning_ship_julia,
-        'burning_ship': _init_c_mandelbrot_burning_ship,
-        'burning_ship_julia': _init_c_julia_burning_ship_julia
-    }
-
-    update_map = {
-        ('mandelbrot', 2): _update_mandelbrot_julia_2, ('julia', 2): _update_mandelbrot_julia_2,
-        ('mandelbrot', 3): _update_mandelbrot_julia_3, ('julia', 3): _update_mandelbrot_julia_3,
-        ('mandelbrot', 4): _update_mandelbrot_julia_4, ('julia', 4): _update_mandelbrot_julia_4,
-        ('mandelbrot', 5): _update_mandelbrot_julia_5, ('julia', 5): _update_mandelbrot_julia_5,
-        ('mandelbrot', 6): _update_mandelbrot_julia_6, ('julia', 6): _update_mandelbrot_julia_6,
-        ('mandelbrot', 7): _update_mandelbrot_julia_7, ('julia', 7): _update_mandelbrot_julia_7,
-        ('mandelbrot', 8): _update_mandelbrot_julia_8, ('julia', 8): _update_mandelbrot_julia_8,
-        ('burning_ship', 2): _update_burning_ship_2, ('burning_ship_julia', 2): _update_burning_ship_2,
-        ('burning_ship', 3): _update_burning_ship_3, ('burning_ship_julia', 3): _update_burning_ship_3,
-        ('burning_ship', 4): _update_burning_ship_4, ('burning_ship_julia', 4): _update_burning_ship_4,
-        ('burning_ship', 5): _update_burning_ship_5, ('burning_ship_julia', 5): _update_burning_ship_5,
-        ('burning_ship', 6): _update_burning_ship_6, ('burning_ship_julia', 6): _update_burning_ship_6,
-        ('burning_ship', 7): _update_burning_ship_7, ('burning_ship_julia', 7): _update_burning_ship_7,
-        ('burning_ship', 8): _update_burning_ship_8, ('burning_ship_julia', 8): _update_burning_ship_8
-    }
-
-    if mode not in init_c_map:
+    if mode in {'mandelbrot', 'burning_ship'}:
+        init_c = _init_c_mandelbrot_burning_ship
+    elif mode in {'julia', 'burning_ship_julia'}:
+        init_c = _init_c_julia_burning_ship_julia
+    else:
         raise ValueError('Mode must be mandelbrot, julia, burning_ship, or burning_ship_julia.')
-    if (mode, power) not in update_map:
+
+    if mode in {'mandelbrot', 'julia'} and power == 2:
+        update = _update_mandelbrot_julia_2
+    elif mode in {'mandelbrot', 'julia'} and power == 3:
+        update = _update_mandelbrot_julia_3
+    elif mode in {'mandelbrot', 'julia'} and power == 4:
+        update = _update_mandelbrot_julia_4
+    elif mode in {'mandelbrot', 'julia'} and power == 5:
+        update = _update_mandelbrot_julia_5
+    elif mode in {'mandelbrot', 'julia'} and power == 6:
+        update = _update_mandelbrot_julia_6
+    elif mode in {'mandelbrot', 'julia'} and power == 7:
+        update = _update_mandelbrot_julia_7
+    elif mode in {'mandelbrot', 'julia'} and power == 8:
+        update = _update_mandelbrot_julia_8
+    elif mode in {'burning_ship', 'burning_ship_julia'} and power == 2:
+        update = _update_burning_ship_2
+    elif mode in {'burning_ship', 'burning_ship_julia'} and power == 3:
+        update = _update_burning_ship_3
+    elif mode in {'burning_ship', 'burning_ship_julia'} and power == 4:
+        update = _update_burning_ship_4
+    elif mode in {'burning_ship', 'burning_ship_julia'} and power == 5:
+        update = _update_burning_ship_5
+    elif mode in {'burning_ship', 'burning_ship_julia'} and power == 6:
+        update = _update_burning_ship_6
+    elif mode in {'burning_ship', 'burning_ship_julia'} and power == 7:
+        update = _update_burning_ship_7
+    elif mode in {'burning_ship', 'burning_ship_julia'} and power == 8:
+        update = _update_burning_ship_8
+    else:
         raise ValueError('Power must be between 2 and 8.')
 
-    init_c = init_c_map[mode]
-    update = update_map[(mode, power)]
     log_power = math.log(float(power))
 
     for i in range(length):
