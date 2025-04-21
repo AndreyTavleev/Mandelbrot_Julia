@@ -101,10 +101,10 @@ class Ui_setC(object):
 
         self.gridLayout_setC.addWidget(self.pushButton_RhoPhiC, 7, 0, 1, 4, Qt.AlignmentFlag.AlignHCenter)
 
-        self.pushButto_ReImC = QPushButton(setC)
-        self.pushButto_ReImC.setObjectName(u"pushButto_ReImC")
+        self.pushButton_ReImC = QPushButton(setC)
+        self.pushButton_ReImC.setObjectName(u"pushButton_ReImC")
 
-        self.gridLayout_setC.addWidget(self.pushButto_ReImC, 3, 0, 1, 4, Qt.AlignmentFlag.AlignHCenter)
+        self.gridLayout_setC.addWidget(self.pushButton_ReImC, 3, 0, 1, 4, Qt.AlignmentFlag.AlignHCenter)
 
         self.label_2 = QLabel(setC)
         self.label_2.setObjectName(u"label_2")
@@ -119,8 +119,8 @@ class Ui_setC(object):
         self.gridLayout.addLayout(self.gridLayout_setC, 0, 0, 1, 1)
 
         QWidget.setTabOrder(self.lineEdit_ReC, self.lineEdit_ImC)
-        QWidget.setTabOrder(self.lineEdit_ImC, self.pushButto_ReImC)
-        QWidget.setTabOrder(self.pushButto_ReImC, self.lineEdit_rhoC)
+        QWidget.setTabOrder(self.lineEdit_ImC, self.pushButton_ReImC)
+        QWidget.setTabOrder(self.pushButton_ReImC, self.lineEdit_rhoC)
         QWidget.setTabOrder(self.lineEdit_rhoC, self.lineEdit_phiC)
         QWidget.setTabOrder(self.lineEdit_phiC, self.pushButton_RhoPhiC)
 
@@ -137,7 +137,7 @@ class Ui_setC(object):
         self.label_4.setText(QCoreApplication.translate("setC", u"Im(C):", None))
         self.label_phiC.setText(QCoreApplication.translate("setC", u"Argument, phi:", None))
         self.pushButton_RhoPhiC.setText(QCoreApplication.translate("setC", u"Set rho and phi", None))
-        self.pushButto_ReImC.setText(QCoreApplication.translate("setC", u"Set Re(C) and Im(C)", None))
+        self.pushButton_ReImC.setText(QCoreApplication.translate("setC", u"Set Re(C) and Im(C)", None))
         self.label_2.setText(QCoreApplication.translate("setC", u"Or set the modulus and argument:", None))
         self.label.setText(QCoreApplication.translate("setC", u"Set the Real and Imaginary parts of C:", None))
     # retranslateUi
