@@ -6,7 +6,7 @@ from matplotlib import colors
 from matplotlib import pyplot as plt
 
 from config import *
-from fractal_calculation import burning_ship_set, mandelbrot_julia_set
+from fractal_calculation import fractal_set
 from ui_form_setC import Ui_setC
 from ui_form_setLimits import Ui_setLimits
 
@@ -31,7 +31,7 @@ class DialogSetC(BaseDialog):
         ui.label_phiC.setText('Argument, \U000003D5:')
         ui.label_rhoC.setText('Modulus, \U000003C1:')
         ui.pushButton_RhoPhiC.setText('Set \U000003C1 and \U000003D5')
-        ui.pushButto_ReImC.clicked.connect(lambda: parent.set_c('xy'))
+        ui.pushButton_ReImC.clicked.connect(lambda: parent.set_c('xy'))
         ui.pushButton_RhoPhiC.clicked.connect(lambda: parent.set_c('rhophi'))
 
         ui.lineEdit_ReC.setText(f'{parent.x_c:.4f}')
@@ -83,14 +83,9 @@ class FractalControls:
         print('n, diff =', n, xmax - xmin, ymax - ymin)
         print(xmin, xmax, ymin, ymax, n, self.horizon, self.length, self.height)
         # Transpose data for correct synchronisation with imshow
-        if self.mode in {'mandelbrot', 'julia'}:
-            data = mandelbrot_julia_set(xmin, xmax, ymin, ymax, horizon=self.horizon,
-                                        length=self.length, height=self.height, n=n,
-                                        x_c=self.x_c, y_c=self.y_c, power=self.power, mode=self.mode)[2].T
-        elif self.mode in {'burning_ship', 'burning_ship_julia'}:
-            data = burning_ship_set(xmin, xmax, ymin, ymax, horizon=self.horizon,
-                                    length=self.length, height=self.height, n=n,
-                                    x_c=self.x_c, y_c=self.y_c, power=self.power, mode=self.mode)[2].T
+        data = fractal_set(xmin, xmax, ymin, ymax, horizon=self.horizon,
+                           length=self.length, height=self.height, n=n,
+                           x_c=self.x_c, y_c=self.y_c, power=self.power, mode=self.mode)[2].T
         if self.mode in {'burning_ship', 'burning_ship_julia'} and not self.ax.yaxis_inverted():
             self.ax.invert_yaxis()
         if self.mode in {'mandelbrot', 'julia'} and self.ax.yaxis_inverted():

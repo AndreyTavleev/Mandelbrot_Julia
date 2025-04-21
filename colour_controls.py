@@ -41,7 +41,7 @@ class DialogSetGradient(BaseDialog):
 
 class Gradient(QWidget):
     """
-    Widget for creating and editing gradient color maps.
+    Widget for creating and editing gradient colour maps.
     """
 
     def __init__(self, points=None, parent=None):
@@ -274,16 +274,22 @@ class ColourManager:
 
     def set_freq(self):
         self.freq = float(self.ui.lineEdit_freq.text())
-        data = (np.sin(self.cache * self.freq + self.offset)) ** 2
-        im = self.ax.images[0]
-        im.set_array(data)
-        im.set(clim=(im.get_array().min(), im.get_array().max()))
-        self.fig.canvas.draw_idle()
+        if not self.shading:
+            data = (np.sin(self.cache * self.freq + self.offset)) ** 2
+            im = self.ax.images[0]
+            im.set_array(data)
+            im.set(clim=(im.get_array().min(), im.get_array().max()))
+            self.fig.canvas.draw_idle()
+        else:
+            self.ax_update()
 
     def set_offset(self):
         self.offset = float(self.ui.lineEdit_offset.text())
-        data = (np.sin(self.cache * self.freq + self.offset)) ** 2
-        im = self.ax.images[0]
-        im.set_array(data)
-        im.set(clim=(im.get_array().min(), im.get_array().max()))
-        self.fig.canvas.draw_idle()
+        if not self.shading:
+            data = (np.sin(self.cache * self.freq + self.offset)) ** 2
+            im = self.ax.images[0]
+            im.set_array(data)
+            im.set(clim=(im.get_array().min(), im.get_array().max()))
+            self.fig.canvas.draw_idle()
+        else:
+            self.ax_update()

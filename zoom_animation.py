@@ -11,7 +11,7 @@ import numpy as np
 from matplotlib import colors
 
 import config as cfg
-from fractal_calculation import mandelbrot_julia_set, burning_ship_set
+from fractal_calculation import fractal_set
 
 
 def make_colourmap(colours_data):
@@ -52,14 +52,8 @@ def make_frame(i, scale, xmin_1, xmax_1, ymin_1, ymax_1, xmin_2, xmax_2, ymin_2,
 
     print(f'Frame {i + 1} / {frames}')
 
-    if mode in {'mandelbrot', 'julia'}:
-        data = mandelbrot_julia_set(xmin_3, xmax_3, ymin_3, ymax_3, horizon=horizon,
-                                    length=length, height=height, n=n,
-                                    x_c=x_c, y_c=y_c, power=power, mode=mode)[2].T
-    elif mode in {'burning_ship', 'burning_ship_julia'}:
-        data = burning_ship_set(xmin_3, xmax_3, ymin_3, ymax_3, horizon=horizon,
-                                length=length, height=height, n=n,
-                                x_c=x_c, y_c=y_c, power=power, mode=mode)[2].T
+    data = fractal_set(xmin_3, xmax_3, ymin_3, ymax_3, horizon=horizon, length=length, height=height,
+                       n=n, x_c=x_c, y_c=y_c, power=power, mode=mode)[2].T
     if c_regime == 'standard':
         pass
     elif c_regime == 'sin':
@@ -158,7 +152,7 @@ def main(metadata, x_centre_1, y_centre_1, delta_x_1, delta_y_1,
         x_centre_2 = xmin_2 + delta_x_2 / 2
         y_centre_2 = ymin_2 + delta_y_2 / 2
         mode = metadata['mode']
-        if mode == 'julia':
+        if mode in {'julia', 'burning_ship_julia'}:
             x_c = metadata['x_c']
             y_c = metadata['y_c']
         horizon = metadata['horizon']
@@ -208,10 +202,13 @@ def main(metadata, x_centre_1, y_centre_1, delta_x_1, delta_y_1,
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description='Creates a zoom animation of a fractal (Mandelbrot or Julia set), '
-                    'with optional shading, colour mapping, and custom calculation and view parameters.',
-        epilog='For further information, see the README.md.')
+    formatter = lambda prog: argparse.ArgumentDefaultsHelpFormatter(prog, max_help_position=40)
+    parser = argparse.ArgumentParser(formatter_class=formatter,
+                                     description='Creates a zoom animation of a fractal '
+                                                 '(Mandelbrot, Julia or Burning Ship set), '
+                                                 'with optional shading, colour mapping, '
+                                                 'and custom calculation and view parameters.',
+                                     epilog='For further information, see the README.md.')
     parser.add_argument('--metadata', type=str,
                         help='Path to the JSON metadata file for loading the fractal configurations. '
                              'The coordinates of the final fractal, fractal calculation parameters '
@@ -259,7 +256,7 @@ if __name__ == '__main__':
     parser.add_argument('-H', '--horizon', type=np.float64,
                         help=f'Divergence threshold (horizon) for the fractal calculation. '
                              f'(default: {cfg.DEFAULT_HORIZON_MANDELBROT} for mandelbrot and'
-                             f'{cfg.DEFAULT_HORIZON_JULIA} for julia).')
+                             f'{cfg.DEFAULT_HORIZON_JULIA} for julia and burning_ship).')
     parser.add_argument('-f', '--frames', type=int, default=400,
                         help='Number of frames to render for the animation (default: 400).')
     parser.add_argument('-l', '--length', type=int, default=cfg.DEFAULT_LENGTH,

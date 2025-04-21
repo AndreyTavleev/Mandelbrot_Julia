@@ -14,7 +14,7 @@ from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
 
 from colour_controls import ColourManager
 from config import *
-from fractal_calculation import burning_ship_set, mandelbrot_julia_set
+from fractal_calculation import fractal_set
 from fractal_controls import (CoordinateManager, FractalControls,
                               ImageRenderer, JuliaParameterControl,
                               polar_coordinates)
@@ -126,16 +126,10 @@ class ImageExporter:
         xmin, xmax = self.ax.get_xlim()
         ymin, ymax = self.ax.get_ylim()
         print(xmin, xmax, ymin, ymax, self.x_c, self.y_c, self.horizon)
-        if self.mode in {'mandelbrot', 'julia'}:
-            data = mandelbrot_julia_set(xmin, xmax, ymin, ymax, x_c=self.x_c, y_c=self.y_c,
-                                        height=img_height, length=img_width,
-                                        n=self.n, horizon=self.horizon, power=self.power,
-                                        mode=self.mode)[2].T
-        elif self.mode in {'burning_ship', 'burning_ship_julia'}:
-            data = burning_ship_set(xmin, xmax, ymin, ymax, x_c=self.x_c, y_c=self.y_c,
-                                    height=img_height, length=img_width,
-                                    n=self.n, horizon=self.horizon, power=self.power,
-                                    mode=self.mode)[2].T
+        data = fractal_set(xmin, xmax, ymin, ymax, x_c=self.x_c, y_c=self.y_c,
+                           height=img_height, length=img_width,
+                           n=self.n, horizon=self.horizon, power=self.power,
+                           mode=self.mode)[2].T
         if self.regime == 'sin':
             data = (np.sin(data * self.freq + self.offset)) ** 2
         if self.save_image_dialog.ui.checkBox_withAxes.isChecked():
@@ -291,7 +285,7 @@ class MJSet(MyWindowMandelbrotJulia, FractalControls, CoordinateManager, JuliaPa
             ColourManager, ImageRenderer, ImageExporter):
     """
     A class for handling graphical user interface rendering, interactions, and state
-    management for Mandelbrot and Julia set visualizations.
+    management for Mandelbrot and Julia set visualisations.
     """
 
     def __init__(self, application: QApplication = None, parent=None):
@@ -424,17 +418,17 @@ class MJSet(MyWindowMandelbrotJulia, FractalControls, CoordinateManager, JuliaPa
 
         # Button actions
         for button, action in (
-            (self.ui.pushButton_zoom_plus, lambda: self.zoom('plus')),
-            (self.ui.pushButton_zoom_minus, lambda: self.zoom('minus')),
-            (self.ui.pushButton_NewLims, self.show_set_limits_dialog),
-            (self.ui.pushButton_ResetLims, self.reset_lims),
-            (self.ui.pushButton_ResetN, self.reset_n),
-            (self.ui.pushButton_ResetC, self.reset_c),
-            (self.ui.pushButton_setC, self.show_set_c_dialog),
-            (self.ui.pushButton_setShading, self.show_set_shading_dialog),
-            (self.ui.pushButton_removeShading, self.remove_shading),
-            (self.ui.pushButton_Rebuild, self.rebuild_im),
-            (self.ui.pushButton_Reset, self.reset_im),
+                (self.ui.pushButton_zoom_plus, lambda: self.zoom('plus')),
+                (self.ui.pushButton_zoom_minus, lambda: self.zoom('minus')),
+                (self.ui.pushButton_NewLims, self.show_set_limits_dialog),
+                (self.ui.pushButton_ResetLims, self.reset_lims),
+                (self.ui.pushButton_ResetN, self.reset_n),
+                (self.ui.pushButton_ResetC, self.reset_c),
+                (self.ui.pushButton_setC, self.show_set_c_dialog),
+                (self.ui.pushButton_setShading, self.show_set_shading_dialog),
+                (self.ui.pushButton_removeShading, self.remove_shading),
+                (self.ui.pushButton_Rebuild, self.rebuild_im),
+                (self.ui.pushButton_Reset, self.reset_im),
         ):
             button.clicked.connect(action)
 

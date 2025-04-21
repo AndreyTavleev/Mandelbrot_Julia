@@ -95,7 +95,7 @@ the sequence is iterated until the divergence criterion is met.
 The function then returns:
 
 ``` math
-{\rm iter} + 2 - \log_k \left(\frac{\ln(z_n^2)}{\ln({\rm horizon})}\right),
+{\rm iter} + 1 - \log_k \left(\frac{\ln(z_n^2)}{\ln({\rm horizon})}\right),
 ```
 
 Where ${\rm iter}$ is the iteration number at which the divergence

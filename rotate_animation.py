@@ -12,7 +12,7 @@ import numpy as np
 from matplotlib import colors
 
 import config as cfg
-from fractal_calculation import mandelbrot_julia_set, burning_ship_set
+from fractal_calculation import fractal_set
 
 
 def make_colourmap(colours_data):
@@ -37,16 +37,8 @@ def make_frame(i, xmin, xmax, ymin, ymax, x_c, y_c, mode, n, power, horizon, len
     """Generate a single frame for the animation."""
     print(f'Frame {i + 1} / {frames}')
 
-    if mode == 'julia':
-        data = mandelbrot_julia_set(xmin, xmax, ymin, ymax, horizon=horizon,
-                                    length=length, height=height, n=n,
-                                    x_c=x_c, y_c=y_c, power=power, mode=mode)[2].T
-    elif mode == 'burning_ship_julia':
-        data = burning_ship_set(xmin, xmax, ymin, ymax, horizon=horizon,
-                                length=length, height=height, n=n,
-                                x_c=x_c, y_c=y_c, power=power, mode=mode)[2].T
-    else:
-        raise ValueError(f"Invalid mode: {mode}. Choose 'julia' or 'burning_ship_julia'.")
+    data = fractal_set(xmin, xmax, ymin, ymax, horizon=horizon, length=length, height=height,
+                       n=n, x_c=x_c, y_c=y_c, power=power, mode=mode)[2].T
     if c_regime == 'standard':
         pass
     elif c_regime == 'sin':
@@ -158,7 +150,7 @@ def main(metadata, xmin, xmax, ymin, ymax, rho, phi_min, phi_max, mode, n, power
 
     result = [pool.apply_async(make_frame, kwds={'i': i, 'xmin': xmin, 'xmax': xmax, 'ymin': ymin, 'ymax': ymax,
                                                  'x_c': x_cc, 'y_c': y_cc, 'n': n, 'power': power, 'horizon': horizon,
-                                                 'mode': mode, 'length': length, 'height': height, 
+                                                 'mode': mode, 'length': length, 'height': height,
                                                  'colourmap': colourmap,
                                                  'c_regime': c_regime, 'freq': freq, 'offset': offset,
                                                  'shading': shading, 'azdeg': azdeg, 'altdeg': altdeg,
@@ -172,10 +164,12 @@ def main(metadata, xmin, xmax, ymin, ymax, rho, phi_min, phi_max, mode, n, power
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description='Creates a rotational animation of a Julia set, '
-                    'with optional shading, colour mapping, and custom calculation and view parameters.',
-        epilog='For further information, see the README.md.')
+    formatter = lambda prog: argparse.ArgumentDefaultsHelpFormatter(prog, max_help_position=40)
+    parser = argparse.ArgumentParser(formatter_class=formatter,
+                                     description='Creates a rotational animation of a Julia set, '
+                                                 'with optional shading, colour mapping, and custom '
+                                                 'calculation and view parameters.',
+                                     epilog='For further information, see the README.md.')
     parser.add_argument('--metadata', type=str,
                         help='Path to the JSON metadata file for loading the fractal configurations. '
                              'The coordinates of the fractal, fractal calculation parameters '
