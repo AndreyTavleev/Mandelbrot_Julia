@@ -1,4 +1,5 @@
 import math
+from random import uniform
 
 import numpy as np
 from numba import njit
@@ -219,4 +220,58 @@ def fractal_set(xmin, xmax, ymin, ymax, x_c, y_c, height, length, n, horizon, po
                     break
                 real, imag = update(real, imag, x_0, y_0)
             n3[i, j] = val
+    return r1, r2, n3
+
+
+@njit(fastmath=True, parallel=True)
+def buddhabrot_set(xmin, xmax, ymin, ymax, x_c, y_c, height, length, n, horizon, power=2, mode='mandelbrot'):
+    samples = 10_000_000
+    r1 = [1]
+    r2 = [1]
+    n3 = np.zeros((length, height))
+
+    if mode == 'mandelbrot':
+        init_c = _init_c_mandelbrot_burning_ship
+    elif mode == 'julia':
+        init_c = _init_c_julia_burning_ship_julia
+    else:
+        raise ValueError('Mode must be mandelbrot or julia.')
+
+    if mode in {'mandelbrot', 'julia'} and power == 2:
+        update = _update_mandelbrot_julia_2
+    elif mode in {'mandelbrot', 'julia'} and power == 3:
+        update = _update_mandelbrot_julia_3
+    elif mode in {'mandelbrot', 'julia'} and power == 4:
+        update = _update_mandelbrot_julia_4
+    elif mode in {'mandelbrot', 'julia'} and power == 5:
+        update = _update_mandelbrot_julia_5
+    elif mode in {'mandelbrot', 'julia'} and power == 6:
+        update = _update_mandelbrot_julia_6
+    elif mode in {'mandelbrot', 'julia'} and power == 7:
+        update = _update_mandelbrot_julia_7
+    elif mode in {'mandelbrot', 'julia'} and power == 8:
+        update = _update_mandelbrot_julia_8
+    else:
+        raise ValueError('Power must be between 2 and 8.')
+
+    for _ in range(samples):
+        real = uniform(xmin, xmax)
+        imag = uniform(ymin, ymax)
+        orbit = []
+
+        x_0, y_0 = init_c(real, imag, x_c, y_c)
+
+        for i in range(n):
+            if real * real + imag * imag > horizon:
+                break
+            real, imag = update(real, imag, x_0, y_0)
+            orbit.append((real, imag))
+        else:
+            continue
+        if len(orbit) > 50:
+            for (real, imag) in orbit:
+                if xmin <= real < xmax and ymin <= imag < ymax:
+                    i = int((real - xmin) / (xmax - xmin) * length)
+                    j = int((imag - ymin) / (ymax - ymin) * height)
+                    n3[i, j] += 1
     return r1, r2, n3
