@@ -382,8 +382,8 @@ class ImageRenderer:
         self.power = DEFAULT_POWER
         self.ui.comboBox_Power.setCurrentText(str(self.power))
         if not self.no_ax_update:
-            self.reset_lims()
             self.reset_im()
+            self.reset_lims()
 
 
 class CoordinateManager:
