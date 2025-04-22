@@ -33,7 +33,7 @@ def make_colourmap(colours_data):
 
 def make_frame(i, scale, xmin_1, xmax_1, ymin_1, ymax_1, xmin_2, xmax_2, ymin_2, ymax_2,
                mode, x_c, y_c, power, n_regime, n_i, n_f, horizon, length, height, colourmap,
-               c_regime, freq, offset, shading, azdeg, altdeg, vert_exag, path, frames):
+               c_regime, freq, offset, shading, azdeg, altdeg, vert_exag, supersampling, path, frames):
     """Generate a single frame for the zoom animation."""
     xmin_3 = (1 - scale) * xmin_1 + scale * xmin_2
     ymin_3 = (1 - scale) * ymin_1 + scale * ymin_2
@@ -52,18 +52,19 @@ def make_frame(i, scale, xmin_1, xmax_1, ymin_1, ymax_1, xmin_2, xmax_2, ymin_2,
 
     print(f'Frame {i + 1} / {frames}')
 
-    data = fractal_set(xmin_3, xmax_3, ymin_3, ymax_3, horizon=horizon, length=length, height=height,
-                       n=n, x_c=x_c, y_c=y_c, power=power, mode=mode)[2].T
+    data = fractal_set(xmin_3, xmax_3, ymin_3, ymax_3, horizon=horizon, length=length*supersampling,
+                       height=height*supersampling, n=n, x_c=x_c, y_c=y_c, power=power, mode=mode)[2].T
     if c_regime == 'standard':
         pass
     elif c_regime == 'sin':
         data = (np.sin(data * freq + offset)) ** 2
+    data = data.reshape((height, supersampling, length, supersampling)).mean(axis=(1, 3))
     if shading:
         light = colors.LightSource(azdeg=azdeg, altdeg=altdeg)
         data = light.shade(data, cmap=plt.get_cmap(colourmap), vert_exag=vert_exag,
                            blend_mode='hsv')
     plt.imsave(path + f'image_{i:d}.png', data,
-               cmap=colourmap if not shading else None)  # , origin='lower')
+               cmap=colourmap if not shading else None, origin='lower')
 
 
 def validate_aspect_ratio(delta_x_1, delta_y_1, delta_x_2, delta_y_2, length, height):
@@ -138,7 +139,7 @@ def generate_video(path, name, fps=30):
 def main(metadata, x_centre_1, y_centre_1, delta_x_1, delta_y_1,
          x_centre_2, y_centre_2, delta_x_2, delta_y_2, x_c, y_c,
          mode, power, n_regime, n_i, n_f, horizon, frames, length, height, colourmap,
-         c_regime, freq, offset, shading, azdeg, altdeg, vert_exag, threads, path):
+         c_regime, freq, offset, shading, azdeg, altdeg, vert_exag, threads, supersampling, path):
     """Main function to generate the zoom animation."""
     if not isinstance(colourmap, str):
         colourmap = make_colourmap(colourmap)
@@ -186,13 +187,16 @@ def main(metadata, x_centre_1, y_centre_1, delta_x_1, delta_y_1,
     ymin_2 = y_centre_2 - delta_y_2 / 2
     ymax_2 = y_centre_2 + delta_y_2 / 2
 
+    if supersampling == 0:
+        supersampling = 1
+
     time0 = dt.now()
     scales = 1.0 - np.logspace(0, -50, frames, base=2, dtype=np.float64)
     pool = mp.Pool(threads)
     result = [pool.apply_async(make_frame, args=(i, scale, xmin_1, xmax_1, ymin_1, ymax_1, xmin_2, xmax_2,
                                                  ymin_2, ymax_2, mode, x_c, y_c, power, n_regime, n_i, n_f, horizon,
                                                  length, height, colourmap, c_regime, freq, offset, shading, azdeg,
-                                                 altdeg, vert_exag, path, frames))
+                                                 altdeg, vert_exag, abs(supersampling), path, frames))
               for i, scale in enumerate(scales)]
 
     im_arr = [res.get() for res in result]
@@ -283,6 +287,8 @@ if __name__ == '__main__':
                         help='Vertical exaggeration factor for shading relief (default: 1.0).')
     parser.add_argument('-t', '--threads', type=int, default=mp.cpu_count() - 2,
                         help='Number of threads to use for frame creation (default: number of CPU cores - 2).')
+    parser.add_argument('-ss', '--supersampling', type=int, default=1,
+                        help='Supersampling (SSAA) factor for the image rendering (default: 1).')
     args = parser.parse_args()
     if args.horizon is None:
         if args.mode == 'mandelbrot':

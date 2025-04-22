@@ -66,6 +66,7 @@ class DialogSave(BaseDialog):
         ui.lineEdit_L.setText('1000')
         ui.lineEdit_H.setText('1000')
         ui.lineEdit_DPI.setText(str(int(parent.fig.dpi)))
+        ui.lineEdit_SS.setText('1')
         ui.lineEdit_DPI.setEnabled(False)
 
         ui.label_Size.setText('Image size: \n1000 \U000000D7 1000 pix.')
@@ -116,22 +117,26 @@ class ImageExporter:
 
     def save_to_file(self, filename):
         self.save_image_dialog.ui.pushButton_Save.setEnabled(False)
-        length = int(self.save_image_dialog.ui.lineEdit_L.text())
-        height = int(self.save_image_dialog.ui.lineEdit_H.text())
+        length = abs(int(self.save_image_dialog.ui.lineEdit_L.text()))
+        height = abs(int(self.save_image_dialog.ui.lineEdit_H.text()))
+        ss_factor = abs(int(float(self.save_image_dialog.ui.lineEdit_SS.text())))
+        if ss_factor == 0:
+            ss_factor = 1
         img_width, img_height = length, height
         if self.save_image_dialog.ui.checkBox_withAxes.isChecked():
-            dpi = int(self.save_image_dialog.ui.lineEdit_DPI.text())
+            dpi = abs(int(self.save_image_dialog.ui.lineEdit_DPI.text()))
             img_width *= dpi
             img_height *= dpi
         xmin, xmax = self.ax.get_xlim()
         ymin, ymax = self.ax.get_ylim()
         print(xmin, xmax, ymin, ymax, self.x_c, self.y_c, self.horizon)
         data = fractal_set(xmin, xmax, ymin, ymax, x_c=self.x_c, y_c=self.y_c,
-                           height=img_height, length=img_width,
+                           height=img_height * ss_factor, length=img_width * ss_factor,
                            n=self.n, horizon=self.horizon, power=self.power,
                            mode=self.mode)[2].T
         if self.regime == 'sin':
             data = (np.sin(data * self.freq + self.offset)) ** 2
+        data = data.reshape((img_height, ss_factor, img_width, ss_factor)).mean(axis=(1, 3))
         if self.save_image_dialog.ui.checkBox_withAxes.isChecked():
             _, ax = plt.subplots(figsize=(length, height), dpi=dpi)
             if not self.shading:
@@ -158,11 +163,11 @@ class ImageExporter:
         self.save_image_dialog.ui.pushButton_Save.setEnabled(True)
 
     def edit_size_label(self):
-        ll = int(self.save_image_dialog.ui.lineEdit_L.text())
-        h = int(self.save_image_dialog.ui.lineEdit_H.text())
+        ll = abs(int(self.save_image_dialog.ui.lineEdit_L.text()))
+        h = abs(int(self.save_image_dialog.ui.lineEdit_H.text()))
         if self.save_image_dialog.ui.checkBox_withAxes.isChecked():
             self.save_image_dialog.ui.lineEdit_DPI.setEnabled(True)
-            dpi = int(self.save_image_dialog.ui.lineEdit_DPI.text())
+            dpi = abs(int(self.save_image_dialog.ui.lineEdit_DPI.text()))
             self.save_image_dialog.ui.label_Size.setText(f'Image size: \n{ll * dpi} \U000000D7 {h * dpi} pix.')
         else:
             self.save_image_dialog.ui.lineEdit_DPI.setEnabled(False)
@@ -320,7 +325,7 @@ class MJSet(MyWindowMandelbrotJulia, FractalControls, CoordinateManager, JuliaPa
         self.invalid_slider = False
         self.cache = None
 
-        # Initialize dialogues and toolbar
+        # Initialise dialogues and toolbar
         self.main_layout = None
         self.set_limits_dialog, self.save_image_dialog = None, None
         self.set_c_dialog, self.shading_dialog = None, None
@@ -329,7 +334,7 @@ class MJSet(MyWindowMandelbrotJulia, FractalControls, CoordinateManager, JuliaPa
         self.toolbar = None
 
     def initialize_ui_components(self):
-        """Initializes UI components and configures their default values."""
+        """Initialises UI components and configures their default values."""
         self.ui.groupbox_C.setVisible(False)
         self.ui.lineEdit_freq.setVisible(False)
         self.ui.label_freq.setVisible(False)

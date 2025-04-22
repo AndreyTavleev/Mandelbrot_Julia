@@ -257,23 +257,34 @@ class ColourManager:
         regime = self.ui.comboBox_regime.currentText()
         if self.regime == regime:
             return
-        self.regime = self.ui.comboBox_regime.currentText()
-        im = self.ax.images[0]
+        self.regime = regime
         if regime == 'standard':
-            im.set_array(self.cache)
-            self.cache = None
             self.ui.lineEdit_freq.setVisible(False)
             self.ui.label_freq.setVisible(False)
             self.ui.lineEdit_offset.setVisible(False)
             self.ui.label_offset.setVisible(False)
         elif regime == 'sin':
-            self.cache = im.get_array()
-            data = (np.sin(self.cache * self.freq + self.offset)) ** 2
-            im.set_array(data)
             self.ui.lineEdit_freq.setVisible(True)
             self.ui.label_freq.setVisible(True)
             self.ui.lineEdit_offset.setVisible(True)
             self.ui.label_offset.setVisible(True)
+        else:
+            raise ValueError('Regime must be standard or sin.')
+
+        if self.shading and not self.no_ax_update:
+            self.ax_update()
+            return
+
+        im = self.ax.images[0]
+        if regime == 'standard':
+            im.set_array(self.cache)
+            self.cache = None
+        elif regime == 'sin':
+            self.cache = im.get_array()
+            data = (np.sin(self.cache * self.freq + self.offset)) ** 2
+            im.set_array(data)
+        else:
+            raise ValueError('Regime must be standard or sin.')
         im.set(clim=(im.get_array().min(), im.get_array().max()))
         self.fig.canvas.draw_idle()
 
@@ -285,7 +296,7 @@ class ColourManager:
             im.set_array(data)
             im.set(clim=(im.get_array().min(), im.get_array().max()))
             self.fig.canvas.draw_idle()
-        else:
+        elif not self.no_ax_update:
             self.ax_update()
 
     def set_offset(self):
@@ -296,5 +307,5 @@ class ColourManager:
             im.set_array(data)
             im.set(clim=(im.get_array().min(), im.get_array().max()))
             self.fig.canvas.draw_idle()
-        else:
+        elif not self.no_ax_update:
             self.ax_update()
