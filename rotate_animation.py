@@ -33,16 +33,17 @@ def make_colourmap(colours_data):
 
 
 def make_frame(i, xmin, xmax, ymin, ymax, x_c, y_c, mode, n, power, horizon, length, height,
-               colourmap, c_regime, freq, offset, shading, azdeg, altdeg, vert_exag, path, frames):
+               colourmap, c_regime, freq, offset, shading, azdeg, altdeg, vert_exag, supersampling, path, frames):
     """Generate a single frame for the animation."""
     print(f'Frame {i + 1} / {frames}')
 
-    data = fractal_set(xmin, xmax, ymin, ymax, horizon=horizon, length=length, height=height,
-                       n=n, x_c=x_c, y_c=y_c, power=power, mode=mode)[2].T
+    data = fractal_set(xmin, xmax, ymin, ymax, horizon=horizon, length=length*supersampling,
+                       height=height*supersampling, n=n, x_c=x_c, y_c=y_c, power=power, mode=mode)[2].T
     if c_regime == 'standard':
         pass
     elif c_regime == 'sin':
         data = (np.sin(data * freq + offset)) ** 2
+    data = data.reshape((height, supersampling, length, supersampling)).mean(axis=(1, 3))
     if shading:
         light = colors.LightSource(azdeg=azdeg, altdeg=altdeg)
         data = light.shade(data, cmap=plt.get_cmap(colourmap), vert_exag=vert_exag,
@@ -105,7 +106,7 @@ def generate_video(path, name, fps=30):
 
 def main(metadata, xmin, xmax, ymin, ymax, rho, phi_min, phi_max, mode, n, power,
          horizon, frames, length, height, colourmap,
-         c_regime, freq, offset, shading, azdeg, altdeg, vert_exag, threads, path):
+         c_regime, freq, offset, shading, azdeg, altdeg, vert_exag, threads, supersampling, path):
     """Main function to generate the rotational animation of a Julia set."""
     if not isinstance(colourmap, str):
         colourmap = make_colourmap(colourmap)
@@ -142,6 +143,9 @@ def main(metadata, xmin, xmax, ymin, ymax, rho, phi_min, phi_max, mode, n, power
 
     length, height = validate_aspect_ratio(xmin, xmax, ymin, ymax, length, height)
 
+    if supersampling == 0:
+        supersampling = 1
+
     time0 = dt.now()
     angle = np.linspace(phi_min, phi_max, frames)
     x_c = rho * np.sin(angle)
@@ -151,7 +155,7 @@ def main(metadata, xmin, xmax, ymin, ymax, rho, phi_min, phi_max, mode, n, power
     result = [pool.apply_async(make_frame, kwds={'i': i, 'xmin': xmin, 'xmax': xmax, 'ymin': ymin, 'ymax': ymax,
                                                  'x_c': x_cc, 'y_c': y_cc, 'n': n, 'power': power, 'horizon': horizon,
                                                  'mode': mode, 'length': length, 'height': height,
-                                                 'colourmap': colourmap,
+                                                 'colourmap': colourmap, 'supersampling': abs(supersampling),
                                                  'c_regime': c_regime, 'freq': freq, 'offset': offset,
                                                  'shading': shading, 'azdeg': azdeg, 'altdeg': altdeg,
                                                  'vert_exag': vert_exag, 'path': path, 'frames': frames})
@@ -226,6 +230,8 @@ if __name__ == '__main__':
                         help='Vertical exaggeration factor for shading relief (default: 1.0).')
     parser.add_argument('-t', '--threads', type=int, default=mp.cpu_count() - 2,
                         help='Number of threads to use for frame creation (default: number of CPU cores - 2).')
+    parser.add_argument('-ss', '--supersampling', type=int, default=1,
+                        help='Supersampling (SSAA) factor for the image rendering (default: 1).')
     args = parser.parse_args()
     path = input('Enter the path to the folder where the frames and video will be saved (default: tmp/): ')
     if not path:

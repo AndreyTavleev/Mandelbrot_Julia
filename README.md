@@ -2,9 +2,9 @@
 
 Just another one simple PyQt (PySide6) GUI that shows
 beautiful Mandelbrot and Julia fractals, allowing
-user to explore them interactively. The user can zoom
+the user to explore them interactively. The user can zoom
 into different parts of the fractals, adjust calculation
-parameters, customise colours and save the generated images.
+parameters, customise colours, and save the generated images.
 
 ### Features:
 
@@ -49,7 +49,7 @@ python3 -m venv fractal
 source fractal/bin/activate
 ```
 
-Then update pip, install all the required packages and run
+Then update pip, install all the required packages, and run
 the code:
 
 ``` shell
@@ -68,7 +68,7 @@ z_{n+1} = z_n^k + c.
 ```
 
 For the **Mandelbrot set**, the sequence starts
-with $z_0 = 0$ and $c = z$. For the **Julia set**, $z_0 = z$
+with $z_0 = 0$ and $c = z$. For the **Julia set**, $z_0 = z$,
 and $c = x_c + iy_c$ is a constant chosen by the user.
 The most common exponent is $k=2$, but the user can
 choose any integer power from $2$ to $8$.
@@ -76,7 +76,7 @@ choose any integer power from $2$ to $8$.
 If, for a given value of $z$ (and $c$ in the case of
 the Julia set), the sequence does not diverge,
 then $z$ is considered to belong to the set.
-For a more detailed description see
+For a more detailed description, see
 [Wikipedia](https://en.wikipedia.org/wiki/Mandelbrot_set)
 and [Wikipedia](https://en.wikipedia.org/wiki/Julia_set).
 
@@ -87,10 +87,10 @@ to the set or it does not. To add colour, a common
 approach is used: points near the outer boundary of
 the set are coloured based on the number of iterations
 required to determine that the point does not belong
-to the set (i.e., when the divergence
+to the set (i.e. when the divergence
 criterion $z_n^2>\rm horizon$ is met). The
 threshold value ${\rm horizon}\geq4$ can be set by the
-user. For a given number $z$ (and $c$ in the case of Julia set),
+user. For a given number $z$ (and $c$ in the case of a Julia set),
 the sequence is iterated until the divergence criterion is met.
 The function then returns:
 
@@ -107,7 +107,7 @@ the larger the value of $N$ required.
 
 ## Setting the limits and exploring
 
-The application allows user to interactively explore
+The application allows the user to interactively explore
 different regions of the Mandelbrot and Julia sets by
 adjusting the limits of the complex plane.
 
@@ -146,7 +146,7 @@ limit configuration dialogue.
 3. Confirm the values to apply them to the view.
 
 The current X- and Y-limits, as well as the coordinates
-of the centre are displayed above the Zoom buttons.
+of the centre, are displayed above the Zoom buttons.
 Use the `Reset limits` button to restore the default view range.
 It varies depending on the set type and power.
 
@@ -216,8 +216,8 @@ There are two colouring techniques available in the
 lowest data value to 0 and the highest to 1.
 * `Sin`: Transforms the data using the formula
 $\sin^2(\omega \cdot \text{data} + \Delta)$,
-where the frequency $\omega$ (default: $0.01$) and the 
-offset $\Delta$ (default: $0.0$) can be set by the user. 
+where the frequency $\omega$ (default: $0.01$) and the
+offset $\Delta$ (default: $0.0$) can be set by the user.
 This allows for cyclic colour variation.
 
 ### Shading
@@ -259,9 +259,16 @@ the image, which will affect the size of the axes — see
 discussion on DPI.
 The image renders at the specified resolution, preserving
 shading and colourmap preferences.
+* **Antialiasing**: You can also enable antialiasing by setting the supersampling
+antialiasing (SSAA) factor. If this factor is equal to one, no
+antialiasing is applied. Otherwise, the image is rendered at a
+higher resolution (scaled by this factor along each axis) and
+then downsampled by averaging the pixels to reduce aliasing.
+For more details, see [Wikipedia](https://en.wikipedia.org/wiki/Supersampling).
+Note that antialiasing could affect the image colours.
 
 **Metadata** refers to a JSON file that contains all the
-information about the generated fractal  — set type,
+information about the generated fractal — set type,
 calculation parameters, axis limits, and colouring/shading
 options. By selecting the `Save metadata` option, you can
 save the current fractal for quick access in the future.
@@ -274,7 +281,7 @@ To load a previously saved fractal, choose the
 
 The script `zoom_animation.py` generates a smooth zoom animation
 of a fractal — either the Mandelbrot set or a Julia set. It supports
-numerous customisation options, which are described via the `--help` flag:
+many customisation options, which are described via the `--help` flag:
 
 ``` shell
 python3 zoom_animation.py --help
@@ -283,12 +290,13 @@ usage: zoom_animation.py [-h] [--metadata METADATA] [--x_centre_1 X_CENTRE_1]
                          [--delta_y_1 DELTA_Y_1] [--x_centre_2 X_CENTRE_2]
                          [--y_centre_2 Y_CENTRE_2] [--delta_x_2 DELTA_X_2]
                          [--delta_y_2 DELTA_Y_2] [--x_c X_C] [--y_c Y_C]
-                         [-m {mandelbrot,julia}] [-p {2,3,4,5,6,7,8}]
-                         [--n_regime {dynamic,static}] [--n_i N_I] [--n_f N_F]
-                         [-H HORIZON] [-f FRAMES] [-l LENGTH] [-hei HEIGHT]
-                         [-c COLOURMAP] [--c_regime {standard,sin}] [-fr FREQ]
-                         [-of OFFSET] [-s] [-az AZDEG] [-al ALTDEG]
-                         [-ve VERT_EXAG] [-t THREADS]
+                         [-m mandelbrot|julia|burning_ship|burning_ship_julia]
+                         [-p {2,3,4,5,6,7,8}] [--n_regime dynamic|static]
+                         [--n_i N_I] [--n_f N_F] [-H HORIZON] [-f FRAMES]
+                         [-l LENGTH] [-hei HEIGHT] [-c COLOURMAP]
+                         [--c_regime standard|sin] [-fr FREQ] [-of OFFSET] [-s]
+                         [-az AZDEG] [-al ALTDEG] [-ve VERT_EXAG] [-t THREADS]
+                         [-ss SUPERSAMPLING]
 ...description...
 ```
 
@@ -347,19 +355,20 @@ of a Julia set, in which the angle (argument $\varphi$) of the complex
 parameter $C=\rho e^{\varphi}$ varies over time, tracing a circular
 path in the complex plane. The result is a visually striking
 transformation of the Julia set as it rotates through the parameter space.
-It supports numerous customisation options, which are described
+It supports many customisation options, which are described
 via the `--help` flag:
 
 ``` shell
 python3 rotate_animation.py --help
-usage: rotate_animation.py [-h] [--metadata METADATA] [--xmin XMIN] [--xmax XMAX]
-                           [--ymin YMIN] [--ymax YMAX] [--rho RHO]
-                           [--phi_min PHI_MIN] [--phi_max PHI_MAX] [--n N]
+usage: rotate_animation.py [-h] [--metadata METADATA] [--xmin XMIN]
+                           [--xmax XMAX] [--ymin YMIN] [--ymax YMAX]
+                           [--rho RHO] [--phi_min PHI_MIN] [--phi_max PHI_MAX]
+                           [-m julia|burning_ship_julia] [--n N]
                            [-p {2,3,4,5,6,7,8}] [-H HORIZON] [-f FRAMES]
                            [-l LENGTH] [-hei HEIGHT] [-c COLOURMAP]
-                           [--c_regime {standard,sin}] [-fr FREQ] [-of OFFSET]
+                           [--c_regime standard|sin] [-fr FREQ] [-of OFFSET]
                            [-s] [-az AZDEG] [-al ALTDEG] [-ve VERT_EXAG]
-                           [-t THREADS]
+                           [-t THREADS] [-ss SUPERSAMPLING]
 ...description...
 ```
 
