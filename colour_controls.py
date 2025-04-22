@@ -258,19 +258,24 @@ class ColourManager:
         if self.regime == regime:
             return
         self.regime = self.ui.comboBox_regime.currentText()
+        im = self.ax.images[0]
         if regime == 'standard':
+            im.set_array(self.cache)
             self.cache = None
             self.ui.lineEdit_freq.setVisible(False)
             self.ui.label_freq.setVisible(False)
             self.ui.lineEdit_offset.setVisible(False)
             self.ui.label_offset.setVisible(False)
         elif regime == 'sin':
+            self.cache = im.get_array()
+            data = (np.sin(self.cache * self.freq + self.offset)) ** 2
+            im.set_array(data)
             self.ui.lineEdit_freq.setVisible(True)
             self.ui.label_freq.setVisible(True)
             self.ui.lineEdit_offset.setVisible(True)
             self.ui.label_offset.setVisible(True)
-        if not self.no_ax_update:
-            self.ax_update()
+        im.set(clim=(im.get_array().min(), im.get_array().max()))
+        self.fig.canvas.draw_idle()
 
     def set_freq(self):
         self.freq = float(self.ui.lineEdit_freq.text())
